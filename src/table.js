@@ -248,7 +248,7 @@ export default class Table {
       }
 
       this._pages.set(index, data);
-      callback(null, data);
+      callback();
     });
   }
 
