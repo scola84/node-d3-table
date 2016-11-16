@@ -9,6 +9,7 @@ export default class TableMessage {
       .classed('scola message', true)
       .styles({
         'line-height': '3em',
+        'padding': 0,
         'text-align': 'center'
       });
   }

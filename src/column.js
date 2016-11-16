@@ -13,7 +13,7 @@ export default class TableColumn {
         'font-size': '0.9em',
         'line-height': '2em',
         'padding': '0 0 0 1em',
-        'text-align': 'left',
+        'text-align': 'start',
         'text-transform': 'uppercase'
       });
   }

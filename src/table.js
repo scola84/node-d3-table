@@ -170,15 +170,9 @@ export default class Table {
     return this;
   }
 
-  load(callback) {
-    this._loadMeta((error) => {
-      if (error) {
-        callback(error);
-        return;
-      }
-
-      this._loadPage(null, callback);
-    });
+  loading(value) {
+    this._loading = value;
+    return this;
   }
 
   offset(value) {
@@ -204,16 +198,27 @@ export default class Table {
     return this;
   }
 
-  clear() {
-    return this;
+  load(callback) {
+    this.clear();
+
+    if (this._loading) {
+      this._renderMessage(this._loading);
+    }
+
+    this._loadMeta((error) => {
+      if (error) {
+        callback(error);
+        return;
+      }
+
+      this._loadPage(null, callback);
+    });
   }
 
   render() {
     if (!this._meta) {
       return this;
     }
-
-    this._body.selectAll('tr').remove();
 
     if (this._pages.has(this._offset) === false) {
       this._loadPage(this._offset, () => {
@@ -223,6 +228,16 @@ export default class Table {
       this._render(this._offset);
     }
 
+    return this;
+  }
+
+  clear() {
+    if (this._message) {
+      this._message.destroy();
+      this._message = null;
+    }
+
+    this._body.selectAll('tr').remove();
     return this;
   }
 
@@ -255,20 +270,15 @@ export default class Table {
   _render(index) {
     const page = this._pages.get(index);
 
-    if (page.length === 0) {
-      if (!this._message) {
-        this._message = this._empty();
-        this._body.node()
-          .appendChild(this._message.root().node());
-      }
-    } else if (this._message) {
-      this._message.destroy();
-      this._message = null;
-    }
+    this.clear();
 
     page.forEach((item, itemIndex) => {
       this._renderItem(item, itemIndex);
     });
+
+    if (page.length === 0 && this._empty) {
+      this._renderMessage(this._empty);
+    }
   }
 
   _renderItem(item, index) {
@@ -280,7 +290,10 @@ export default class Table {
         .remove()
         .styles({
           'line-height': '3em',
-          'padding': '0 0 0 1em'
+          'overflow': 'hidden',
+          'padding': '0 0 0 1em',
+          'text-overflow': 'ellipsis',
+          'white-space': 'nowrap'
         }));
 
       if (cell) {
@@ -295,5 +308,18 @@ export default class Table {
     if (row.select('td').size() === 0) {
       row.remove();
     }
+  }
+
+  _renderMessage(factory) {
+    this._message = factory();
+
+    this._message
+      .root()
+      .attr('colspan', this._enter.length);
+
+    this._body
+      .append('tr')
+      .node()
+      .appendChild(this._message.root().node());
   }
 }
