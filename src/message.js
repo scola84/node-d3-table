@@ -8,6 +8,7 @@ export default class TableMessage {
       .remove()
       .classed('scola message', true)
       .styles({
+        'cursor': 'default',
         'line-height': '3em',
         'padding': 0,
         'text-align': 'center'
