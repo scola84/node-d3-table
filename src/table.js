@@ -4,17 +4,13 @@ import 'd3-selection-multi';
 
 export default class Table {
   constructor() {
-    this._enter = [];
-    this._empty = null;
+    this._columns = [];
 
-    this._footer = null;
-    this._header = null;
+    this._column = () => {};
+    this._cell = (d) => d;
 
-    this._offset = 0;
-    this._model = null;
-
-    this._meta = null;
-    this._pages = new Map();
+    this._enter = () => {};
+    this._exit = () => {};
 
     this._root = select('body')
       .append('div')
@@ -59,22 +55,6 @@ export default class Table {
   }
 
   destroy() {
-    if (this._footer) {
-      this._footer.destroy();
-      this._footer = null;
-    }
-
-    if (this._header) {
-      this._header.destroy();
-      this._header = null;
-    }
-
-    if (this._message) {
-      this._message.destroy();
-      this._message = null;
-    }
-
-    this._root.dispatch('destroy');
     this._root.remove();
     this._root = null;
   }
@@ -83,13 +63,8 @@ export default class Table {
     return this._root;
   }
 
-  model(value) {
-    if (typeof value === 'undefined') {
-      return this._model;
-    }
-
-    this._model = value;
-    return this;
+  body() {
+    return this._body;
   }
 
   footer(action) {
@@ -107,7 +82,7 @@ export default class Table {
     this._footer = controlBar();
 
     this._footer.root()
-      .classed('footer', true)
+      .classed('scola footer', true)
       .styles({
         'border-top': '1px solid #CCC'
       });
@@ -133,7 +108,7 @@ export default class Table {
     this._header = controlBar();
 
     this._header.root()
-      .classed('header', true)
+      .classed('scola header', true)
       .styles({
         'border-bottom': '1px solid #CCC'
       });
@@ -144,43 +119,28 @@ export default class Table {
     return this;
   }
 
-  column(element, action) {
-    if (action === true) {
-      this._columnRow.node()
-        .appendChild(element.root().node());
+  column(columns, modifier) {
+    this._columns = columns;
+    this._column = modifier;
 
-      const colspan = this._columnRow.selectAll('th').size();
+    this._headerRow.attr('colspan', columns.length);
+    this._footerRow.attr('colspan', columns.length);
 
-      this._headerRow.attr('colspan', colspan);
-      this._footerRow.attr('colspan', colspan);
-    } else if (action === false) {
-      element.root().remove();
-    }
+    return this;
+  }
 
+  cell(value) {
+    this._cell = value;
     return this;
   }
 
   enter(value) {
-    this._enter.push(value);
+    this._enter = value;
     return this;
   }
 
-  empty(value) {
-    this._empty = value;
-    return this;
-  }
-
-  loading(value) {
-    this._loading = value;
-    return this;
-  }
-
-  offset(value) {
-    if (typeof value === 'undefined') {
-      return this._offset;
-    }
-
-    this._offset = value;
+  exit(value) {
+    this._exit = value;
     return this;
   }
 
@@ -198,128 +158,76 @@ export default class Table {
     return this;
   }
 
-  load(callback) {
-    this.clear();
-
-    if (this._loading) {
-      this._renderMessage(this._loading);
-    }
-
-    this._loadMeta((error) => {
-      if (error) {
-        callback(error);
-        return;
-      }
-
-      this._loadPage(null, callback);
-    });
-  }
-
-  render() {
-    if (!this._meta) {
-      return this;
-    }
-
-    if (this._pages.has(this._offset) === false) {
-      this._loadPage(this._offset, () => {
-        this._render(this._offset);
-      });
-    } else {
-      this._render(this._offset);
-    }
-
-    return this;
-  }
-
-  clear() {
-    if (this._message) {
-      this._message.destroy();
-      this._message = null;
-    }
-
-    this._body.selectAll('tr').remove();
-    return this;
-  }
-
-  _loadMeta(callback) {
-    this._model.meta((error, data) => {
-      if (error) {
-        callback(error);
-        return;
-      }
-
-      this._meta = data;
-      callback();
-    });
-  }
-
-  _loadPage(index, callback) {
-    index = index || this._offset;
-
-    this._model.page(index, (error, data) => {
-      if (error) {
-        callback(error);
-        return;
-      }
-
-      this._pages.set(index, data);
-      callback();
-    });
-  }
-
-  _render(index) {
-    const page = this._pages.get(index);
-
-    this.clear();
-
-    page.forEach((item, itemIndex) => {
-      this._renderItem(item, itemIndex);
-    });
-
-    if (page.length === 0 && this._empty) {
-      this._renderMessage(this._empty);
-    }
-  }
-
-  _renderItem(item, index) {
-    const row = this._body.append('tr');
-
-    this._enter.forEach((render) => {
-      const cell = render(item, select('body')
-        .append('td')
-        .remove()
-        .styles({
-          'line-height': '3em',
-          'overflow': 'hidden',
-          'padding': '0 0 0 1em',
-          'text-overflow': 'ellipsis',
-          'white-space': 'nowrap'
-        }));
-
-      if (cell) {
-        if (index > 0) {
-          cell.style('border-top', '1px solid #CCC');
-        }
-
-        row.node().appendChild(cell.node());
-      }
-    });
-
-    if (row.select('td').size() === 0) {
-      row.remove();
-    }
-  }
-
-  _renderMessage(factory) {
-    this._message = factory();
-
-    this._message
-      .root()
-      .attr('colspan', this._enter.length);
-
-    this._body
+  message(text, modifier = () => {}) {
+    const message = this._body
       .append('tr')
-      .node()
-      .appendChild(this._message.root().node());
+      .classed('scola message', true)
+      .append('td')
+      .attr('colspan', this._columns.length)
+      .styles({
+        'cursor': 'default',
+        'line-height': '3em',
+        'padding': 0,
+        'text-align': 'center'
+      })
+      .text(text);
+
+    modifier(message);
+    return this;
+  }
+
+  render(data, key) {
+    this._body
+      .select('.scola.message')
+      .remove();
+
+    const column = this._columnRow
+      .selectAll('th')
+      .data(this._columns)
+      .enter()
+      .append('th')
+      .styles({
+        'border-bottom': '1px solid #CCC',
+        'color': '#AAA',
+        'font-weight': 'normal',
+        'font-size': '0.9em',
+        'line-height': '2em',
+        'padding': '0 0 0 1em',
+        'text-align': 'start',
+        'text-transform': 'uppercase'
+      });
+
+    const row = this._body
+      .selectAll('tr')
+      .data(data, key);
+
+    const cell = row.selectAll('td')
+      .data(this._cell);
+
+    const exit = row.exit();
+
+    const enter = row
+      .enter()
+      .append('tr')
+      .merge(row)
+      .style('border-top', (datum, index) => {
+        return index > 0 ? '1px solid #CCC' : null;
+      })
+      .selectAll('td')
+      .data(this._cell)
+      .enter()
+      .append('td')
+      .merge(cell)
+      .styles({
+        'line-height': '3em',
+        'overflow': 'hidden',
+        'padding': '0 0 0 1em',
+        'text-overflow': 'ellipsis',
+        'white-space': 'nowrap'
+      });
+
+    this._column(column);
+    this._exit(exit);
+    this._enter(enter);
   }
 }
