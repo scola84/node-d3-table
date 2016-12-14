@@ -166,8 +166,7 @@ export default class Table {
       .attr('colspan', this._columns.length)
       .styles({
         'cursor': 'default',
-        'line-height': '3em',
-        'padding': 0,
+        'padding': '1em',
         'text-align': 'center'
       })
       .text(text);
@@ -191,10 +190,10 @@ export default class Table {
         'color': '#AAA',
         'font-weight': 'normal',
         'font-size': '0.9em',
-        'line-height': '2em',
-        'padding': '0 0 0 1em',
+        'padding': '0.5em 0 0.5em 1em',
         'text-align': 'start',
-        'text-transform': 'uppercase'
+        'text-transform': 'uppercase',
+        'vertical-align': 'center'
       });
 
     const row = this._body
