@@ -1,9 +1,13 @@
 import { select } from 'd3-selection';
 import { controlBar } from '@scola/d3-generic';
 import 'd3-selection-multi';
+import '@scola/d3-media';
 
 export default class Table {
   constructor() {
+    this._rootMedia = null;
+    this._bodyMedia = null;
+
     this._columns = [];
 
     this._column = () => {};
@@ -24,9 +28,10 @@ export default class Table {
       .append('table')
       .styles({
         'background': '#FFF',
-        'border-bottom': '1px solid #CCC',
-        'border-top': '1px solid #CCC',
         'border-collapse': 'collapse',
+        'border-color': '#CCC',
+        'border-style': 'solid',
+        'border-width': '1px 0',
         'overflow': 'hidden',
         'width': '100%'
       });
@@ -55,6 +60,16 @@ export default class Table {
   }
 
   destroy() {
+    if (this._rootMedia) {
+      this._rootMedia.destroy();
+      this._rootMedia = null;
+    }
+
+    if (this._bodyMedia) {
+      this._bodyMedia.destroy();
+      this._bodyMedia = null;
+    }
+
     this._root.remove();
     this._root = null;
   }
@@ -144,16 +159,33 @@ export default class Table {
     return this;
   }
 
-  inset() {
-    this._root.styles({
-      'padding-left': '1em',
-      'padding-right': '1em'
-    });
+  inset(width = '48em') {
+    if (width === false) {
+      this._rootMedia.destroy();
+      this._rootMedia = null;
 
-    this._table.styles({
-      'border-style': 'none',
-      'border-radius': '0.5em'
-    });
+      this._bodyedia.destroy();
+      this._bodyMedia = null;
+
+      return this;
+    }
+
+    this._rootMedia = this._root
+      .media(`(min-width: ${width})`)
+      .styles({
+        'padding-left': '1em',
+        'padding-right': '1em'
+      })
+      .start();
+
+    this._bodyMedia = this._table
+      .media(`(min-width: ${width})`)
+      .styles({
+        'border-radius': '0.5em',
+        'border-style': 'none',
+        'overflow': 'hidden'
+      })
+      .start();
 
     return this;
   }
