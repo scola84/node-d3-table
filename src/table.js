@@ -5,16 +5,17 @@ import '@scola/d3-media';
 
 export default class Table {
   constructor() {
+    this._cell = (d) => d;
+    this._enter = () => {};
+    this._exit = () => {};
+    this._column = () => {};
+
     this._rootMedia = null;
     this._bodyMedia = null;
 
+    this._header = null;
+    this._footer = null;
     this._columns = [];
-
-    this._column = () => {};
-    this._cell = (d) => d;
-
-    this._enter = () => {};
-    this._exit = () => {};
 
     this._root = select('body')
       .append('div')
@@ -60,16 +61,11 @@ export default class Table {
   }
 
   destroy() {
-    if (this._rootMedia) {
-      this._rootMedia.destroy();
-      this._rootMedia = null;
-    }
+    this._deleteInset();
+    this._deleteHeader();
+    this._deleteFooter();
 
-    if (this._bodyMedia) {
-      this._bodyMedia.destroy();
-      this._bodyMedia = null;
-    }
-
+    this._root.dispatch('destroy');
     this._root.remove();
     this._root = null;
   }
@@ -82,110 +78,79 @@ export default class Table {
     return this._body;
   }
 
-  footer(action) {
-    if (typeof action === 'undefined') {
-      return this._footer;
+  cell(value = null) {
+    if (value === null) {
+      return this._cell;
     }
 
-    if (action === false) {
-      this._footer.destroy();
-      this._footer = null;
-
-      return this;
-    }
-
-    this._footer = controlBar();
-
-    this._footer.root()
-      .classed('scola footer', true)
-      .styles({
-        'border-top': '1px solid #CCC'
-      });
-
-    this._footerRow.node()
-      .appendChild(this._footer.root().node());
-
-    return this;
-  }
-
-  header(action) {
-    if (typeof action === 'undefined') {
-      return this._header;
-    }
-
-    if (action === false) {
-      this._header.destroy();
-      this._header = null;
-
-      return this;
-    }
-
-    this._header = controlBar();
-
-    this._header.root()
-      .classed('scola header', true)
-      .styles({
-        'border-bottom': '1px solid #CCC'
-      });
-
-    this._headerRow.node()
-      .appendChild(this._header.root().node());
-
-    return this;
-  }
-
-  column(columns, modifier) {
-    this._columns = columns;
-    this._column = modifier;
-
-    this._headerRow.attr('colspan', columns.length);
-    this._footerRow.attr('colspan', columns.length);
-
-    return this;
-  }
-
-  cell(value) {
     this._cell = value;
     return this;
   }
 
-  enter(value) {
+  enter(value = null) {
+    if (value === null) {
+      return this._enter;
+    }
+
     this._enter = value;
     return this;
   }
 
-  exit(value) {
+  exit(value = null) {
+    if (value === null) {
+      return this._exit;
+    }
+
     this._exit = value;
     return this;
   }
 
   inset(width = '48em') {
     if (width === false) {
-      this._rootMedia.destroy();
-      this._rootMedia = null;
-
-      this._bodyedia.destroy();
-      this._bodyMedia = null;
-
-      return this;
+      return this._deleteInset();
     }
 
-    this._rootMedia = this._root
-      .media(`(min-width: ${width})`)
-      .styles({
-        'padding-left': '1em',
-        'padding-right': '1em'
-      })
-      .start();
+    if (!this._rootMedia) {
+      this._insertInset(width);
+    }
 
-    this._bodyMedia = this._table
-      .media(`(min-width: ${width})`)
-      .styles({
-        'border-radius': '0.5em',
-        'border-style': 'none',
-        'overflow': 'hidden'
-      })
-      .start();
+    return this;
+  }
+
+  header(action = true) {
+    if (action === false) {
+      return this._deleteHeader();
+    }
+
+    if (!this._header) {
+      this._insertHeader();
+    }
+
+    return this._header;
+  }
+
+  footer(action = true) {
+    if (action === false) {
+      return this._deleteFooter();
+    }
+
+    if (!this._footer) {
+      this._insertFooter();
+    }
+
+    return this._footer;
+  }
+
+  column(columns = null, modifier = null) {
+    if (columns === null) {
+      return [this._columns, this._column];
+    }
+
+    this._columns = columns;
+    this._column = modifier;
+
+    this._headerRow.attr('colspan', columns.length);
+    this._footerRow.attr('colspan', columns.length);
 
     return this;
   }
@@ -260,5 +225,88 @@ export default class Table {
     this._column(column);
     this._exit(exit);
     this._enter(enter);
+  }
+
+  _insertInset(width) {
+    this._rootMedia = this._root
+      .media(`(min-width: ${width})`)
+      .styles({
+        'padding-left': '1em',
+        'padding-right': '1em'
+      })
+      .start();
+
+    this._bodyMedia = this._table
+      .media(`(min-width: ${width})`)
+      .styles({
+        'border-radius': '0.5em',
+        'border-style': 'none',
+        'overflow': 'hidden'
+      })
+      .start();
+
+    return this;
+  }
+
+  _deleteInset() {
+    if (this._rootMedia) {
+      this._rootMedia.destroy();
+      this._rootMedia = null;
+    }
+
+    if (this._bodyMedia) {
+      this._bodyMedia.destroy();
+      this._bodyMedia = null;
+    }
+
+    return this;
+  }
+
+  _insertHeader() {
+    this._header = controlBar();
+
+    this._header.root()
+      .classed('scola header', true)
+      .styles({
+        'border-bottom': '1px solid #CCC'
+      });
+
+    this._headerRow.node()
+      .appendChild(this._header.root().node());
+
+    return this;
+  }
+
+  _deleteHeader() {
+    if (this._header) {
+      this._header.destroy();
+      this._header = null;
+    }
+
+    return this;
+  }
+
+  _insertFooter() {
+    this._footer = controlBar();
+
+    this._footer.root()
+      .classed('scola footer', true)
+      .styles({
+        'border-top': '1px solid #CCC'
+      });
+
+    this._footerRow.node()
+      .appendChild(this._footer.root().node());
+
+    return this;
+  }
+
+  _deleteFooter() {
+    if (this._footer) {
+      this._footer.destroy();
+      this._footer = null;
+    }
+
+    return this;
   }
 }
