@@ -1,5 +1,5 @@
 import { select } from 'd3-selection';
-import { controlBar } from '@scola/d3-generic';
+import { mainBar } from '@scola/d3-control';
 import 'd3-selection-multi';
 import '@scola/d3-media';
 
@@ -263,7 +263,7 @@ export default class Table {
   }
 
   _insertHeader() {
-    this._header = controlBar();
+    this._header = mainBar();
 
     this._header.root()
       .classed('scola header', true)
@@ -287,7 +287,7 @@ export default class Table {
   }
 
   _insertFooter() {
-    this._footer = controlBar();
+    this._footer = mainBar();
 
     this._footer.root()
       .classed('scola footer', true)
