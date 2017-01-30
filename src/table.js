@@ -214,15 +214,13 @@ export default class Table {
       .enter()
       .append('tr')
       .merge(row)
-      .style('border-top', (datum, index) => {
-        return index > 0 ? '1px solid #CCC' : null;
-      })
       .selectAll('td')
       .data(this._cell)
       .enter()
       .append('td')
       .merge(cell)
       .styles({
+        'border-top': '1px solid #CCC',
         'line-height': '3em',
         'overflow': 'hidden',
         'padding': '0 0 0 1em',
@@ -342,7 +340,7 @@ export default class Table {
 
   _deleteMessage() {
     if (this._message) {
-      this._message.remove();
+      this._body.selectAll('tr').remove();
       this._message = null;
     }
 
