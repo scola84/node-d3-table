@@ -1,4 +1,5 @@
 import { select } from 'd3-selection';
+import isEqual from 'lodash-es/isEqual';
 import { mainBar } from '@scola/d3-control';
 import 'd3-selection-multi';
 import '@scola/d3-media';
@@ -16,6 +17,9 @@ export default class Table {
     this._header = null;
     this._footer = null;
     this._columns = [];
+    this._message = null;
+
+    this._data = null;
 
     this._root = select('body')
       .append('div')
@@ -64,6 +68,7 @@ export default class Table {
     this._deleteInset();
     this._deleteHeader();
     this._deleteFooter();
+    this._deleteMessage();
 
     this._root.dispatch('destroy');
     this._root.remove();
@@ -152,31 +157,6 @@ export default class Table {
     this._headerRow.attr('colspan', columns.length);
     this._footerRow.attr('colspan', columns.length);
 
-    return this;
-  }
-
-  message(text, modifier = () => {}) {
-    const message = this._body
-      .append('tr')
-      .classed('scola message', true)
-      .append('td')
-      .attr('colspan', this._columns.length)
-      .styles({
-        'cursor': 'default',
-        'padding': '1em',
-        'text-align': 'center'
-      })
-      .text(text);
-
-    modifier(message);
-    return this;
-  }
-
-  render(data, key) {
-    this._body
-      .select('.scola.message')
-      .remove();
-
     const column = this._columnRow
       .selectAll('th')
       .data(this._columns)
@@ -192,6 +172,34 @@ export default class Table {
         'text-transform': 'uppercase',
         'vertical-align': 'center'
       });
+
+    this._column(column);
+    return this;
+  }
+
+  message(value = null) {
+    if (value === null) {
+      return this._message;
+    }
+
+    if (value === false) {
+      return this._deleteMessage();
+    }
+
+    if (this._message) {
+      return this._updateMessage(value);
+    }
+
+    return this._insertMessage(value);
+  }
+
+  render(data, key) {
+    if (isEqual(data, this._data)) {
+      return this;
+    }
+
+    this._data = data;
+    this._deleteMessage();
 
     const row = this._body
       .selectAll('tr')
@@ -222,9 +230,10 @@ export default class Table {
         'white-space': 'nowrap'
       });
 
-    this._column(column);
     this._exit(exit);
     this._enter(enter);
+
+    return this;
   }
 
   _insertInset(width) {
@@ -305,6 +314,36 @@ export default class Table {
     if (this._footer) {
       this._footer.destroy();
       this._footer = null;
+    }
+
+    return this;
+  }
+
+  _insertMessage(text) {
+    this._message = this._body
+      .append('tr')
+      .classed('scola message', true)
+      .append('td')
+      .attr('colspan', this._columns.length)
+      .styles({
+        'cursor': 'default',
+        'padding': '1em',
+        'text-align': 'center'
+      })
+      .text(text);
+
+    return this;
+  }
+
+  _updateMessage(text) {
+    this._message.text(text);
+    return this;
+  }
+
+  _deleteMessage() {
+    if (this._message) {
+      this._message.remove();
+      this._message = null;
     }
 
     return this;
