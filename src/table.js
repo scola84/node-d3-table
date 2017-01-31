@@ -20,6 +20,7 @@ export default class Table {
     this._message = null;
 
     this._data = null;
+    this._key = null;
 
     this._root = select('body')
       .append('div')
@@ -182,9 +183,13 @@ export default class Table {
       return this._message;
     }
 
+    clearTimeout(this._timeout);
+
     if (value === false) {
       return this._deleteMessage();
     }
+
+    this._data = null;
 
     if (this._message) {
       return this._updateMessage(value);
@@ -193,17 +198,35 @@ export default class Table {
     return this._insertMessage(value);
   }
 
-  render(data, key) {
+  loading(value = null, delay = 250) {
+    clearTimeout(this._timeout);
+
+    this._timeout = setTimeout(() => {
+      this.message(value);
+    }, delay);
+  }
+
+  render(data = null, key = null) {
+    if (data === null) {
+      data = this._data;
+      key = this._key;
+
+      this._data = null;
+      this._key = null;
+    }
+
     if (isEqual(data, this._data)) {
       return this;
     }
 
+    this.message(false);
+
     this._data = data;
-    this._deleteMessage();
+    this._key = key;
 
     const row = this._body
       .selectAll('tr')
-      .data(data, key);
+      .data(this._data, this._key);
 
     const cell = row.selectAll('td')
       .data(this._cell);
@@ -318,6 +341,10 @@ export default class Table {
   }
 
   _insertMessage(text) {
+    this._body
+      .selectAll('tr')
+      .remove();
+
     this._message = this._body
       .append('tr')
       .classed('scola message', true)
@@ -340,7 +367,10 @@ export default class Table {
 
   _deleteMessage() {
     if (this._message) {
-      this._body.selectAll('tr').remove();
+      this._body
+        .selectAll('tr')
+        .remove();
+
       this._message = null;
     }
 
