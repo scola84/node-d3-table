@@ -219,8 +219,6 @@ export default class Table {
       return this;
     }
 
-    this.message(false);
-
     this._data = data;
     this._key = key;
 
