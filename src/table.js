@@ -63,9 +63,12 @@ export default class Table {
 
     this._body = this._table
       .append('tbody');
+
+    this._bindTable();
   }
 
   destroy() {
+    this._unbindTable();
     this._deleteInset();
     this._deleteHeader();
     this._deleteFooter();
@@ -253,6 +256,25 @@ export default class Table {
     this._enter(enter);
 
     return this;
+  }
+
+  _bindTable() {
+    this._gesture = this._table
+      .gesture()
+      .on('panstart', (e) => e.stopPropagation())
+      .on('panright', (e) => e.stopPropagation())
+      .on('panleft', (e) => e.stopPropagation())
+      .on('panend', (e) => e.stopPropagation())
+      .on('swiperight', (e) => e.stopPropagation())
+      .on('swipeleft', (e) => e.stopPropagation())
+      .on('tap', (e) => e.stopPropagation());
+  }
+
+  _unbindTable() {
+    if (this._gesture) {
+      this._gesture.destroy();
+      this._gesture = null;
+    }
   }
 
   _insertInset(width) {
