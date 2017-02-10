@@ -1,27 +1,30 @@
-import { select } from 'd3-selection';
+/* eslint prefer-reflect: "off" */
+
+import { select } from 'd3';
 import isEqual from 'lodash-es/isEqual';
 import { controlBar } from '@scola/d3-control';
-import 'd3-selection-multi';
-import '@scola/d3-gesture';
-import '@scola/d3-media';
 
 export default class Table {
   constructor() {
-    this._cell = (d) => d;
     this._enter = () => {};
     this._exit = () => {};
-    this._column = () => {};
 
+    this._headerNames = [];
+    this._headerModifier = null;
+    this._headerCells = null;
+
+    this._gesture = null;
     this._rootMedia = null;
     this._bodyMedia = null;
 
     this._header = null;
     this._footer = null;
-    this._columns = [];
     this._message = null;
 
     this._data = null;
     this._key = null;
+
+    this._size = 'small';
 
     this._root = select('body')
       .append('div')
@@ -31,38 +34,33 @@ export default class Table {
         'padding-bottom': '3em'
       });
 
-    this._table = this._root
-      .append('table')
+    this._body = this._root
+      .append('div')
+      .classed('scola body', true)
       .styles({
         'background': '#FFF',
-        'border-collapse': 'collapse',
         'border-color': '#CCC',
         'border-style': 'solid',
         'border-width': '1px 0',
-        'overflow': 'hidden',
+        'display': 'flex',
+        'flex-direction': 'column',
+      });
+
+    this._table = this._body
+      .append('table')
+      .styles({
+        'border-collapse': 'collapse',
+        'table-layout': 'fixed',
         'width': '100%'
       });
 
-    this._head = this._table
+    this._tableHead = this._table
       .append('thead');
 
-    this._headerRow = this._head
-      .append('tr')
-      .append('th')
-      .style('padding', 0);
-
-    this._columnRow = this._head
+    this._headerRow = this._tableHead
       .append('tr');
 
-    this._foot = this._table
-      .append('tfoot');
-
-    this._footerRow = this._foot
-      .append('tr')
-      .append('td')
-      .style('padding', 0);
-
-    this._body = this._table
+    this._tableBody = this._table
       .append('tbody');
 
     this._bindTable();
@@ -84,19 +82,6 @@ export default class Table {
     return this._root;
   }
 
-  body() {
-    return this._body;
-  }
-
-  cell(value = null) {
-    if (value === null) {
-      return this._cell;
-    }
-
-    this._cell = value;
-    return this;
-  }
-
   enter(value = null) {
     if (value === null) {
       return this._enter;
@@ -112,6 +97,17 @@ export default class Table {
     }
 
     this._exit = value;
+    return this;
+  }
+
+  size(value = null) {
+    if (value === null) {
+      return this._size;
+    }
+
+    this._size = value;
+    this.render();
+
     return this;
   }
 
@@ -151,20 +147,17 @@ export default class Table {
     return this._footer;
   }
 
-  column(columns = null, modifier = null) {
-    if (columns === null) {
-      return [this._columns, this._column];
+  headers(names = null, modifier = null) {
+    if (names === null) {
+      return this._headerNames;
     }
 
-    this._columns = columns;
-    this._column = modifier;
+    this._headerNames = names;
+    this._headerModifier = modifier;
 
-    this._headerRow.attr('colspan', columns.length);
-    this._footerRow.attr('colspan', columns.length);
-
-    const column = this._columnRow
+    this._headerCells = this._headerRow
       .selectAll('th')
-      .data(this._columns)
+      .data((d) => this._columns(d))
       .enter()
       .append('th')
       .styles({
@@ -173,12 +166,11 @@ export default class Table {
         'font-weight': 'normal',
         'font-size': '0.9em',
         'padding': '0.5em 0 0.5em 1em',
-        'text-align': 'start',
+        'text-align': 'left',
         'text-transform': 'uppercase',
         'vertical-align': 'center'
       });
 
-    this._column(column);
     return this;
   }
 
@@ -226,12 +218,14 @@ export default class Table {
     this._data = data;
     this._key = key;
 
-    const row = this._body
+    this._headerModifier(this._headerCells, this);
+
+    const row = this._tableBody
       .selectAll('tr')
       .data(this._data, this._key);
 
     const cell = row.selectAll('td')
-      .data(this._cell);
+      .data((d) => this._columns(d));
 
     const exit = row.exit();
 
@@ -240,7 +234,7 @@ export default class Table {
       .append('tr')
       .merge(row)
       .selectAll('td')
-      .data(this._cell)
+      .data((d) => this._columns(d))
       .enter()
       .append('td')
       .merge(cell)
@@ -253,8 +247,8 @@ export default class Table {
         'white-space': 'nowrap'
       });
 
-    this._exit(exit);
-    this._enter(enter);
+    this._exit(exit, this);
+    this._enter(enter, this);
 
     return this;
   }
@@ -280,14 +274,17 @@ export default class Table {
 
   _insertInset(width) {
     this._rootMedia = this._root
+      .media(`not all and (min-width: ${width})`)
+      .call(() => this.size('small'))
       .media(`(min-width: ${width})`)
+      .call(() => this.size('large'))
       .styles({
         'padding-left': '1em',
         'padding-right': '1em'
       })
       .start();
 
-    this._bodyMedia = this._table
+    this._bodyMedia = this._body
       .media(`(min-width: ${width})`)
       .styles({
         'border-radius': '0.5em',
@@ -322,8 +319,8 @@ export default class Table {
         'border-bottom': '1px solid #CCC'
       });
 
-    this._headerRow.node()
-      .appendChild(this._header.root().node());
+    this._body.node().insertBefore(this._header.root().node(),
+      this._table.node());
 
     return this;
   }
@@ -346,7 +343,7 @@ export default class Table {
         'border-top': '1px solid #CCC'
       });
 
-    this._footerRow.node()
+    this._body.node()
       .appendChild(this._footer.root().node());
 
     return this;
@@ -362,15 +359,15 @@ export default class Table {
   }
 
   _insertMessage(text) {
-    this._body
+    this._tableBody
       .selectAll('tr')
       .remove();
 
-    this._message = this._body
+    this._message = this._tableBody
       .append('tr')
       .classed('scola message', true)
       .append('td')
-      .attr('colspan', this._columns.length)
+      .attr('colspan', this._headerNames.length)
       .styles({
         'cursor': 'default',
         'padding': '1em',
@@ -388,7 +385,7 @@ export default class Table {
 
   _deleteMessage() {
     if (this._message) {
-      this._body
+      this._tableBody
         .selectAll('tr')
         .remove();
 
@@ -396,5 +393,9 @@ export default class Table {
     }
 
     return this;
+  }
+
+  _columns(datum) {
+    return Array(this._headerNames.length).fill(datum);
   }
 }
