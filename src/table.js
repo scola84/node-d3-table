@@ -3,6 +3,7 @@
 import { select } from 'd3';
 import isEqual from 'lodash-es/isEqual';
 import { controlBar } from '@scola/d3-control';
+import { scroller } from '@scola/d3-scroller';
 
 export default class Table {
   constructor() {
@@ -19,12 +20,14 @@ export default class Table {
 
     this._header = null;
     this._footer = null;
+    this._scroller = null;
     this._message = null;
 
     this._data = null;
     this._key = null;
 
     this._size = 'small';
+    this._hover = false;
 
     this._root = select('body')
       .append('div')
@@ -44,6 +47,23 @@ export default class Table {
         'border-width': '1px 0',
         'display': 'flex',
         'flex-direction': 'column',
+        'position': 'relative'
+      });
+
+    this._container = this._body
+      .append('div')
+      .classed('scola scroller', true)
+      .styles({
+        'background': 'rgba(0, 0, 0, 0.2)',
+        'display': 'flex',
+        'height': '100%',
+        'justify-content': 'center',
+        'opacity': 0,
+        'padding': '0.25em 0',
+        'position': 'absolute',
+        'right': 0,
+        'top': 0,
+        'width': '1.5em'
       });
 
     this._table = this._body
@@ -63,14 +83,19 @@ export default class Table {
     this._tableBody = this._table
       .append('tbody');
 
+    this._bindContainer();
     this._bindTable();
   }
 
   destroy() {
+    this._unbindContainer();
     this._unbindTable();
+    this._unbindTableHover();
+
     this._deleteInset();
     this._deleteHeader();
     this._deleteFooter();
+    this._deleteScroller();
     this._deleteMessage();
 
     this._root.dispatch('destroy');
@@ -100,12 +125,23 @@ export default class Table {
     return this;
   }
 
+  hover(value = null) {
+    if (value === null) {
+      return this._hover;
+    }
+
+    this._hover = value;
+    return this;
+  }
+
   size(value = null) {
     if (value === null) {
       return this._size;
     }
 
     this._size = value;
+
+    this._toggleScroller();
     this.render();
 
     return this;
@@ -145,6 +181,18 @@ export default class Table {
     }
 
     return this._footer;
+  }
+
+  scroller(action = true) {
+    if (action === false) {
+      return this._deleteScroller();
+    }
+
+    if (!this._scroller) {
+      this._insertScroller();
+    }
+
+    return this._scroller;
   }
 
   headers(names = null, modifier = null) {
@@ -253,6 +301,14 @@ export default class Table {
     return this;
   }
 
+  _bindContainer() {
+    this._body.on('click', () => this._click());
+  }
+
+  _unbindContainer() {
+    this._body.on('click', null);
+  }
+
   _bindTable() {
     this._gesture = this._table
       .gesture()
@@ -262,7 +318,12 @@ export default class Table {
       .on('panend', (e) => e.stopPropagation())
       .on('swiperight', (e) => e.stopPropagation())
       .on('swipeleft', (e) => e.stopPropagation())
-      .on('tap', (e) => e.stopPropagation());
+      .on('swipeup', (e) => this._swipe(e))
+      .on('swipedown', (e) => this._swipe(e));
+
+    this._gesture.get('swipe').set({
+      direction: 30
+    });
   }
 
   _unbindTable() {
@@ -270,6 +331,16 @@ export default class Table {
       this._gesture.destroy();
       this._gesture = null;
     }
+  }
+
+  _bindTableHover() {
+    this._body.on('mouseover', () => this._showScroller());
+    this._body.on('mouseout', () => this._hideScroller());
+  }
+
+  _unbindTableHover() {
+    this._body.on('mouseover', null);
+    this._body.on('mouseout', null);
   }
 
   _insertInset(width) {
@@ -393,6 +464,101 @@ export default class Table {
     }
 
     return this;
+  }
+
+  _insertScroller() {
+    this._scroller = scroller()
+      .vertical('1em')
+      .line(false)
+      .tabindex(0);
+
+    this._container
+      .node()
+      .appendChild(this._scroller.root().node());
+
+    this._toggleScroller();
+    return this;
+  }
+
+  _deleteScroller() {
+    if (this._scroller) {
+      this._scroller.destroy();
+      this._scroller = null;
+    }
+
+    return this;
+  }
+
+  _hideScroller() {
+    if (!this._scroller) {
+      return;
+    }
+
+    this._container
+      .transition()
+      .style('opacity', 0)
+      .on('end', () => {
+        this._container
+          .style('display', 'none');
+      });
+  }
+
+  _showScroller() {
+    if (!this._scroller) {
+      return;
+    }
+
+    this._container
+      .style('display', 'flex')
+      .transition()
+      .style('opacity', 1);
+  }
+
+  _toggleScroller() {
+    if (this._size === 'large') {
+      this._toggleScrollerLarge();
+    } else {
+      this._toggleScrollerSmall();
+    }
+  }
+
+  _toggleScrollerLarge() {
+    if (this._hover === true) {
+      this._bindTableHover();
+    } else {
+      this._showScroller();
+    }
+  }
+
+  _toggleScrollerSmall() {
+    if (this._hover === true) {
+      this._unbindTableHover();
+    }
+
+    this._hideScroller();
+  }
+
+  _click() {
+    const opacity = Number(this._container.style('opacity'));
+
+    if (this._size === 'small' && opacity === 1) {
+      event.stopPropagation();
+      this._hideScroller();
+    }
+  }
+
+  _swipe(event) {
+    if (!this._scroller) {
+      return;
+    }
+
+    this._showScroller();
+
+    if (event.type === 'swipeup') {
+      this._scroller.up();
+    } else if (event.type === 'swipedown') {
+      this._scroller.down();
+    }
   }
 
   _columns(datum) {
