@@ -7,11 +7,11 @@ import { scroller } from '@scola/d3-scroller';
 
 export default class Table {
   constructor() {
-    this._enter = () => {};
-    this._exit = () => {};
+    this._enter = (s) => s;
+    this._exit = (s) => s;
 
     this._headerNames = [];
-    this._headerModifier = null;
+    this._headerModifier = (s) => s;
     this._headerCells = null;
 
     this._gesture = null;
@@ -47,6 +47,7 @@ export default class Table {
         'border-width': '1px 0',
         'display': 'flex',
         'flex-direction': 'column',
+        'height': '31.875em',
         'position': 'relative'
       });
 
@@ -200,9 +201,11 @@ export default class Table {
       return this._headerNames;
     }
 
-    this._headerNames = names;
-    this._headerModifier = modifier;
+    if (modifier) {
+      this._headerModifier = modifier;
+    }
 
+    this._headerNames = names;
     this._headerCells = this._headerRow
       .selectAll('th')
       .data((d) => this._columns(d))
@@ -266,7 +269,8 @@ export default class Table {
     this._data = data;
     this._key = key;
 
-    this._headerModifier(this._headerCells, this);
+    this._headerModifier(this._headerCells
+      .transition(), this);
 
     const row = this._tableBody
       .selectAll('tr')
@@ -275,7 +279,11 @@ export default class Table {
     const cell = row.selectAll('td')
       .data((d) => this._columns(d));
 
-    const exit = row.exit();
+    const exit = this._exit(row
+      .exit()
+      .transition(), this);
+
+    exit.remove();
 
     const enter = row
       .enter()
@@ -288,17 +296,14 @@ export default class Table {
       .merge(cell)
       .styles({
         'border-top': '1px solid #CCC',
-        'line-height': '3em',
+        'height': '3em',
         'overflow': 'hidden',
         'padding': '0 0 0 1em',
         'text-overflow': 'ellipsis',
         'white-space': 'nowrap'
       });
 
-    this._exit(exit, this);
-    this._enter(enter, this);
-
-    return this;
+    this._enter(enter.transition(), this);
   }
 
   _bindContainer() {
