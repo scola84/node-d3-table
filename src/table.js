@@ -28,8 +28,10 @@ export default class Table {
 
     this._size = 'small';
     this._hover = false;
+
     this._count = 0;
     this._total = 0;
+    this._over = false;
 
     this._root = select('body')
       .append('div')
@@ -175,8 +177,6 @@ export default class Table {
 
     return this;
   }
-
-
 
   inset(width = '48em') {
     if (width === false) {
@@ -369,8 +369,8 @@ export default class Table {
   }
 
   _bindTableHover() {
-    this._body.on('mouseover', () => this._showScroller());
-    this._body.on('mouseout', () => this._hideScroller());
+    this._body.on('mouseover', () => this._mouseover());
+    this._body.on('mouseout', () => this._mouseout());
   }
 
   _unbindTableHover() {
@@ -507,6 +507,8 @@ export default class Table {
       .line(false)
       .tabindex(0);
 
+    this._scroller.root().on('end', () => this._hideScroller());
+
     this._container
       .node()
       .appendChild(this._scroller.root().node());
@@ -525,7 +527,12 @@ export default class Table {
   }
 
   _hideScroller() {
-    if (!this._scroller) {
+    const keep = !this._scroller ||
+      this._hover === false ||
+      this._over === true ||
+      this._scroller.scrolling();
+
+    if (keep) {
       return;
     }
 
@@ -547,6 +554,8 @@ export default class Table {
       .style('display', 'flex')
       .transition()
       .style('opacity', 1);
+
+    this._scroller.resize();
   }
 
   _toggleScroller() {
@@ -570,6 +579,16 @@ export default class Table {
       this._unbindTableHover();
     }
 
+    this._hideScroller();
+  }
+
+  _mouseover() {
+    this._over = true;
+    this._showScroller();
+  }
+
+  _mouseout() {
+    this._over = false;
     this._hideScroller();
   }
 
