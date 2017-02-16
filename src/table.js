@@ -28,6 +28,8 @@ export default class Table {
 
     this._size = 'small';
     this._hover = false;
+    this._count = 0;
+    this._total = 0;
 
     this._root = select('body')
       .append('div')
@@ -47,7 +49,6 @@ export default class Table {
         'border-width': '1px 0',
         'display': 'flex',
         'flex-direction': 'column',
-        'height': '31.875em',
         'position': 'relative'
       });
 
@@ -147,6 +148,35 @@ export default class Table {
 
     return this;
   }
+
+  count(value = null) {
+    if (value === null) {
+      return this._count;
+    }
+
+    if (this._count !== value) {
+      this._count = value;
+      this._height();
+      this._domain();
+    }
+
+    return this;
+  }
+
+  total(value = null) {
+    if (value === null) {
+      return this._total;
+    }
+
+    if (this._total !== value) {
+      this._total = value;
+      this._domain();
+    }
+
+    return this;
+  }
+
+
 
   inset(width = '48em') {
     if (width === false) {
@@ -564,6 +594,23 @@ export default class Table {
     } else if (event.type === 'swipedown') {
       this._scroller.down();
     }
+  }
+
+  _height() {
+    const height = (this._count * 3) + 1.875;
+    this._body.style('height', height + 'em');
+  }
+
+  _domain() {
+    if (!this._total || !this._count) {
+      return;
+    }
+
+    const max = Math.ceil((this._total - this._count) / this._count);
+
+    this._scroller
+      .domain([0, max])
+      .resize();
   }
 
   _columns(datum) {
