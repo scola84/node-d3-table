@@ -1,12 +1,12 @@
 export default function formatCell(table, values) {
   return (datum, index) => {
     const names = table.headers();
-    const size = table.size();
+    const set = table.inset(null) ? 'in' : 'out';
     const name = names[index];
 
-    const value = values[name] && values[name][size] ||
+    const value = values[name] && values[name][set] ||
       values[name] ||
-      values[size] ||
+      values[set] ||
       values;
 
     return typeof value === 'function' ?

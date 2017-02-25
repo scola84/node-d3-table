@@ -17,6 +17,7 @@ export default class Table {
     this._gesture = null;
     this._rootMedia = null;
     this._bodyMedia = null;
+    this._scrollerMedia = null;
 
     this._header = null;
     this._footer = null;
@@ -26,12 +27,10 @@ export default class Table {
     this._data = null;
     this._key = null;
 
-    this._size = 'small';
-    this._hover = false;
-
-    this._count = 0;
-    this._total = 0;
+    this._inset = false;
+    this._maximized = false;
     this._over = false;
+    this._swiped = false;
 
     this._root = select('body')
       .append('div')
@@ -87,14 +86,12 @@ export default class Table {
     this._tableBody = this._table
       .append('tbody');
 
-    this._bindContainer();
+    this._handleSet = (e) => this._set(e);
     this._bindTable();
   }
 
   destroy() {
-    this._unbindContainer();
     this._unbindTable();
-    this._unbindTableHover();
 
     this._deleteInset();
     this._deleteHeader();
@@ -109,6 +106,17 @@ export default class Table {
 
   root() {
     return this._root;
+  }
+
+  model(value = null) {
+    if (value === null) {
+      return this._model;
+    }
+
+    this._model = value;
+    this._bindModel();
+
+    return this;
   }
 
   enter(value = null) {
@@ -129,56 +137,11 @@ export default class Table {
     return this;
   }
 
-  hover(value = null) {
-    if (value === null) {
-      return this._hover;
-    }
-
-    this._hover = value;
-    return this;
-  }
-
-  size(value = null) {
-    if (value === null) {
-      return this._size;
-    }
-
-    this._size = value;
-
-    this._toggleScroller();
-    this.render();
-
-    return this;
-  }
-
-  count(value = null) {
-    if (value === null) {
-      return this._count;
-    }
-
-    if (this._count !== value) {
-      this._count = value;
-      this._height();
-      this._domain();
-    }
-
-    return this;
-  }
-
-  total(value = null) {
-    if (value === null) {
-      return this._total;
-    }
-
-    if (this._total !== value) {
-      this._total = value;
-      this._domain();
-    }
-
-    return this;
-  }
-
   inset(width = '48em') {
+    if (width === null) {
+      return this._inset;
+    }
+
     if (width === false) {
       return this._deleteInset();
     }
@@ -214,25 +177,46 @@ export default class Table {
     return this._footer;
   }
 
-  scroller(action = true) {
-    if (action === false) {
+  scroller(width = '48em') {
+    if (width === null) {
+      return this._scroller;
+    }
+
+    if (width === false) {
       return this._deleteScroller();
     }
 
     if (!this._scroller) {
-      this._insertScroller();
+      this._insertScroller(width);
     }
 
     return this._scroller;
   }
 
+  maximize() {
+    this._maximized = true;
+
+    this._root.styles({
+      'height': '100%',
+      'left': 0,
+      'padding': 0,
+      'position': 'absolute',
+      'top': 0,
+      'width': '100%'
+    });
+
+    this._body.styles({
+      'border': 0,
+      'height': '100%',
+      'overflow': 'hidden'
+    });
+
+    return this;
+  }
+
   headers(names = null, modifier = null) {
     if (names === null) {
       return this._headerNames;
-    }
-
-    if (modifier) {
-      this._headerModifier = modifier;
     }
 
     this._headerNames = names;
@@ -252,10 +236,17 @@ export default class Table {
         'vertical-align': 'center'
       });
 
+    if (modifier) {
+      this._headerModifier = modifier;
+    }
+
+    this._headerModifier(this._headerCells
+      .transition(), this);
+
     return this;
   }
 
-  message(value = null) {
+  message(value = null, delay = null) {
     if (value === null) {
       return this._message;
     }
@@ -264,6 +255,10 @@ export default class Table {
 
     if (value === false) {
       return this._deleteMessage();
+    }
+
+    if (delay !== null) {
+      return this._delayMessage(value, delay);
     }
 
     this._data = null;
@@ -275,12 +270,21 @@ export default class Table {
     return this._insertMessage(value);
   }
 
-  loading(value = null, delay = 250) {
-    clearTimeout(this._timeout);
+  resize() {
+    if (this._maximized === true) {
+      const height = parseFloat(this._body.style('height'));
+      this._model.set('count', Math.ceil(height / (3 * 16)));
+    } else {
+      const height = (this._model.get('count') * 3) + 1.875;
+      this._body.style('height', height + 'em');
 
-    this._timeout = setTimeout(() => {
-      this.message(value);
-    }, delay);
+      if (this._scroller) {
+        this._scroller.resize();
+      }
+    }
+
+    this.render();
+    return this;
   }
 
   render(data = null, key = null) {
@@ -293,14 +297,16 @@ export default class Table {
     }
 
     if (isEqual(data, this._data)) {
-      return this;
+      return;
     }
 
     this._data = data;
     this._key = key;
 
-    this._headerModifier(this._headerCells
-      .transition(), this);
+    if (this._headerCells) {
+      this._headerModifier(this._headerCells
+        .transition(), this);
+    }
 
     const row = this._tableBody
       .selectAll('tr')
@@ -336,15 +342,10 @@ export default class Table {
     this._enter(enter.transition(), this);
   }
 
-  _bindContainer() {
-    this._body.on('click', () => this._click());
-  }
-
-  _unbindContainer() {
-    this._body.on('click', null);
-  }
-
   _bindTable() {
+    this._body.on('mouseenter', () => this._mouseenter());
+    this._body.on('mouseleave', () => this._mouseleave());
+
     this._gesture = this._table
       .gesture()
       .on('panstart', (e) => e.stopPropagation())
@@ -354,7 +355,8 @@ export default class Table {
       .on('swiperight', (e) => e.stopPropagation())
       .on('swipeleft', (e) => e.stopPropagation())
       .on('swipeup', (e) => this._swipe(e))
-      .on('swipedown', (e) => this._swipe(e));
+      .on('swipedown', (e) => this._swipe(e))
+      .on('tap', (e) => this._tap(e));
 
     this._gesture.get('swipe').set({
       direction: 30
@@ -362,28 +364,35 @@ export default class Table {
   }
 
   _unbindTable() {
+    this._body.on('mouseenter', null);
+    this._body.on('mouseleave', null);
+
     if (this._gesture) {
       this._gesture.destroy();
       this._gesture = null;
     }
   }
 
-  _bindTableHover() {
-    this._body.on('mouseover', () => this._mouseover());
-    this._body.on('mouseout', () => this._mouseout());
+  _bindModel() {
+    if (this._model) {
+      this._model.setMaxListeners(this._model.getMaxListeners() + 1);
+      this._model.addListener('set', this._handleSet);
+    }
   }
 
-  _unbindTableHover() {
-    this._body.on('mouseover', null);
-    this._body.on('mouseout', null);
+  _unbindModel() {
+    if (this._model) {
+      this._model.setMaxListeners(this._model.getMaxListeners() - 1);
+      this._model.removeListener('set', this._handleSet);
+    }
   }
 
   _insertInset(width) {
     this._rootMedia = this._root
       .media(`not all and (min-width: ${width})`)
-      .call(() => this.size('small'))
+      .call(() => { this._inset = false; })
       .media(`(min-width: ${width})`)
-      .call(() => this.size('large'))
+      .call(() => { this._inset = true; })
       .styles({
         'padding-left': '1em',
         'padding-right': '1em'
@@ -449,8 +458,8 @@ export default class Table {
         'border-top': '1px solid #CCC'
       });
 
-    this._body.node()
-      .appendChild(this._footer.root().node());
+    this._body
+      .append(() => this._footer.root().node());
 
     return this;
   }
@@ -501,38 +510,63 @@ export default class Table {
     return this;
   }
 
-  _insertScroller() {
+  _delayMessage(text, delay) {
+    delay = delay === true ? 250 : delay;
+
+    clearTimeout(this._timeout);
+
+    this._timeout = setTimeout(() => {
+      this.message(text);
+    }, delay);
+
+    return this;
+  }
+
+  _insertScroller(width) {
     this._scroller = scroller()
       .vertical('1em')
       .line(false)
       .tabindex(0);
 
-    this._scroller.root().on('end', () => this._hideScroller());
+    this._scroller.root().on('end.table', () => {
+      this._hideScroller();
+    });
 
     this._container
-      .node()
-      .appendChild(this._scroller.root().node());
+      .append(() => this._scroller.root().node());
 
-    this._toggleScroller();
+    this._scrollerMedia = this._root
+      .media(`not all and (min-width: ${width})`)
+      .call(() => this.resize())
+      .media(`(min-width: ${width})`)
+      .call(() => this.resize())
+      .start();
+
     return this;
   }
 
   _deleteScroller() {
     if (this._scroller) {
+      this._scroller.root().on('end.table', null);
       this._scroller.destroy();
       this._scroller = null;
+    }
+
+    if (this._scrollerMedia) {
+      this._scrollerMedia.destroy();
+      this._scrollerMedia = null;
     }
 
     return this;
   }
 
   _hideScroller() {
-    const keep = !this._scroller ||
-      this._hover === false ||
+    const show = !this._scroller ||
       this._over === true ||
+      this._swiped === true ||
       this._scroller.scrolling();
 
-    if (keep) {
+    if (show) {
       return;
     }
 
@@ -546,7 +580,10 @@ export default class Table {
   }
 
   _showScroller() {
-    if (!this._scroller) {
+    const hide = !this._scroller ||
+      this._model.get('total') === 0;
+
+    if (hide) {
       return;
     }
 
@@ -558,45 +595,26 @@ export default class Table {
     this._scroller.resize();
   }
 
-  _toggleScroller() {
-    if (this._size === 'large') {
-      this._toggleScrollerLarge();
-    } else {
-      this._toggleScrollerSmall();
-    }
-  }
-
-  _toggleScrollerLarge() {
-    if (this._hover === true) {
-      this._bindTableHover();
-    } else {
-      this._showScroller();
-    }
-  }
-
-  _toggleScrollerSmall() {
-    if (this._hover === true) {
-      this._unbindTableHover();
+  _mouseenter() {
+    if (this._swiped === true) {
+      return;
     }
 
-    this._hideScroller();
-  }
-
-  _mouseover() {
     this._over = true;
     this._showScroller();
   }
 
-  _mouseout() {
+  _mouseleave() {
     this._over = false;
+    this._swiped = false;
     this._hideScroller();
   }
 
-  _click() {
-    const opacity = Number(this._container.style('opacity'));
+  _tap() {
+    const swiped = this._swiped;
+    this._swiped = false;
 
-    if (this._size === 'small' && opacity === 1) {
-      event.stopPropagation();
+    if (swiped === true) {
       this._hideScroller();
     }
   }
@@ -606,6 +624,7 @@ export default class Table {
       return;
     }
 
+    this._swiped = true;
     this._showScroller();
 
     if (event.type === 'swipeup') {
@@ -615,24 +634,34 @@ export default class Table {
     }
   }
 
-  _height() {
-    const height = (this._count * 3) + 1.875;
-    this._body.style('height', height + 'em');
-  }
+  _set(setEvent) {
+    const cancel = setEvent.changed === false ||
+      setEvent.name !== 'total' &&
+      setEvent.name !== 'count';
 
-  _domain() {
-    if (!this._total || !this._count) {
+    if (cancel) {
+      if (setEvent.name === 'count') {
+        this._scroller.resize();
+      }
+
       return;
     }
 
-    const max = Math.ceil((this._total - this._count) / this._count);
+    if (!this._model.has('total') || !this._model.has('count')) {
+      return;
+    }
 
-    this._scroller
-      .domain([0, max])
-      .resize();
+    const total = this._model.get('total');
+    const count = this._model.get('count') -
+      (this._maximized === true ? 1 : 0);
+
+    const max = Math.max(0, Math.ceil((total - count) / count));
+
+    this._scroller.domain([0, max]);
+    this._scroller.resize();
   }
 
   _columns(datum) {
-    return Array(this._headerNames.length).fill(datum);
+    return Array(this._headerNames.length || 1).fill(datum);
   }
 }
