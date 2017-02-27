@@ -1,6 +1,6 @@
 /* eslint prefer-reflect: "off" */
 
-import { select } from 'd3';
+import { event, select } from 'd3';
 import isEqual from 'lodash-es/isEqual';
 import { controlBar } from '@scola/d3-control';
 import { scroller } from '@scola/d3-scroller';
@@ -98,6 +98,11 @@ export default class Table {
     this._unbindModel();
     this._unbindEqualizer();
     this._unbindMaximizer();
+
+    this._unbindInsetHover();
+    this._unbindInsetSwipe();
+    this._unbindHover();
+    this._unbindSwipe();
 
     this._deleteInset();
     this._deleteHeader();
@@ -245,6 +250,34 @@ export default class Table {
     return this;
   }
 
+  hover(action = true) {
+    if (action === true) {
+      this._hover = true;
+      this._bindHover();
+      this._hideScroller();
+    } else if (action === false) {
+      this._hover = false;
+      this._unbindHover();
+      this._showScroller();
+    } else if (action === 'change') {
+      this._bindInsetHover();
+    }
+
+    return this;
+  }
+
+  swipe(action = true) {
+    if (action === true) {
+      this._bindSwipe();
+    } else if (action === false) {
+      this._unbindSwipe();
+    } else if (action === 'change') {
+      this._bindInsetSwipe();
+    }
+
+    return this;
+  }
+
   headers(names = null, modifier = null) {
     if (names === null) {
       return this._headerNames;
@@ -362,9 +395,6 @@ export default class Table {
   }
 
   _bindTable() {
-    this._body.on('mouseenter', () => this._mouseenter());
-    this._body.on('mouseleave', () => this._mouseleave());
-
     this._gesture = this._table
       .gesture()
       .on('panstart', (e) => e.stopPropagation())
@@ -372,20 +402,10 @@ export default class Table {
       .on('panleft', (e) => e.stopPropagation())
       .on('panend', (e) => e.stopPropagation())
       .on('swiperight', (e) => e.stopPropagation())
-      .on('swipeleft', (e) => e.stopPropagation())
-      .on('swipeup', (e) => this._swipe(e))
-      .on('swipedown', (e) => this._swipe(e))
-      .on('tap', (e) => this._tap(e));
-
-    this._gesture.get('swipe').set({
-      direction: 30
-    });
+      .on('swipeleft', (e) => e.stopPropagation());
   }
 
   _unbindTable() {
-    this._body.on('mouseenter', null);
-    this._body.on('mouseleave', null);
-
     if (this._gesture) {
       this._gesture.destroy();
       this._gesture = null;
@@ -432,6 +452,54 @@ export default class Table {
     if (this._maximizer) {
       this._maximizer.root().on('resize.scola-table', null);
     }
+  }
+
+  _bindHover() {
+    this._body.on('mouseenter', () => this._mouseenter());
+    this._body.on('mouseleave', () => this._mouseleave());
+  }
+
+  _unbindHover() {
+    this._body.on('mouseenter', null);
+    this._body.on('mouseleave', null);
+  }
+
+  _bindInsetHover() {
+    this._root.on('inset.scola-table outset.scola-table', () => {
+      this.hover(event.type === 'inset');
+    });
+  }
+
+  _unbindInsetHover() {
+    this._root.on('.scola-table', null);
+  }
+
+  _bindSwipe() {
+    this._gesture
+      .on('swipeup', (e) => this._swipe(e))
+      .on('swipedown', (e) => this._swipe(e))
+      .on('tap', (e) => this._tap(e));
+
+    this._gesture.get('swipe').set({
+      direction: 30
+    });
+  }
+
+  _unbindSwipe() {
+    this._gesture
+      .off('swipeup')
+      .off('swipedown')
+      .off('tap');
+  }
+
+  _bindInsetSwipe() {
+    this._root.on('inset.scola-table outset.scola-table', () => {
+      this.swipe(event.type !== 'inset');
+    });
+  }
+
+  _unbindInsetSwipe() {
+    this._root.on('.scola-table', null);
   }
 
   _insertInset(width) {
@@ -584,9 +652,9 @@ export default class Table {
 
     this._scrollerMedia = this._root
       .media(`not all and (min-width: ${width})`)
-      .call(() => this.render())
+      .call(() => this._change('outset'))
       .media(`(min-width: ${width})`)
-      .call(() => this.render())
+      .call(() => this._change('inset'))
       .start();
 
     return this;
@@ -609,6 +677,7 @@ export default class Table {
 
   _hideScroller() {
     const show = !this._scroller ||
+      this._hover === false ||
       this._over === true ||
       this._swiped === true ||
       this._scroller.scrolling();
@@ -642,6 +711,11 @@ export default class Table {
     this._scroller.resize();
   }
 
+  _change(type) {
+    this._root.dispatch(type);
+    this.render();
+  }
+
   _mouseenter() {
     if (this._swiped === true) {
       return;
@@ -666,7 +740,7 @@ export default class Table {
     }
   }
 
-  _swipe(event) {
+  _swipe(swipeEvent) {
     if (!this._scroller) {
       return;
     }
@@ -674,9 +748,9 @@ export default class Table {
     this._swiped = true;
     this._showScroller();
 
-    if (event.type === 'swipeup') {
+    if (swipeEvent.type === 'swipeup') {
       this._scroller.up();
-    } else if (event.type === 'swipedown') {
+    } else if (swipeEvent.type === 'swipedown') {
       this._scroller.down();
     }
   }
@@ -713,7 +787,7 @@ export default class Table {
   _equalize() {
     const height = parseFloat(this._equalizer.body().style('height')) -
       parseFloat(this._tableHead.style('height')) -
-      parseFloat(this._table.style('padding-bottom'));
+      parseFloat(this._root.style('padding-bottom'));
 
     this._model.set('count', Math.floor(height / this._rowHeight));
     this.render();
