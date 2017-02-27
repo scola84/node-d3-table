@@ -24,13 +24,16 @@ export default class Table {
     this._scroller = null;
     this._message = null;
 
-    this._data = null;
-    this._key = null;
+    this._maximizer = null;
+    this._equalizer = null;
 
+    this._rowHeight = 48;
     this._inset = false;
-    this._maximized = false;
     this._over = false;
     this._swiped = false;
+
+    this._data = null;
+    this._key = null;
 
     this._root = select('body')
       .append('div')
@@ -92,6 +95,9 @@ export default class Table {
 
   destroy() {
     this._unbindTable();
+    this._unbindModel();
+    this._unbindEqualizer();
+    this._unbindMaximizer();
 
     this._deleteInset();
     this._deleteHeader();
@@ -134,6 +140,15 @@ export default class Table {
     }
 
     this._exit = value;
+    return this;
+  }
+
+  height(value = null) {
+    if (value === null) {
+      return this._rowHeight;
+    }
+
+    this._rowHeight = value;
     return this;
   }
 
@@ -193,8 +208,24 @@ export default class Table {
     return this._scroller;
   }
 
-  maximize() {
-    this._maximized = true;
+  equalizer(element = null) {
+    if (element === null) {
+      return this._equalizer;
+    }
+
+    this._equalizer = element;
+    this._bindEqualizer();
+
+    return this;
+  }
+
+  maximizer(element = null) {
+    if (element === null) {
+      return this._maximizer;
+    }
+
+    this._maximizer = element;
+    this._bindMaximizer();
 
     this._root.styles({
       'height': '100%',
@@ -270,23 +301,6 @@ export default class Table {
     return this._insertMessage(value);
   }
 
-  resize() {
-    if (this._maximized === true) {
-      const height = parseFloat(this._body.style('height'));
-      this._model.set('count', Math.ceil(height / (3 * 16)));
-    } else {
-      const height = (this._model.get('count') * 3) + 1.875;
-      this._body.style('height', height + 'em');
-
-      if (this._scroller) {
-        this._scroller.resize();
-      }
-    }
-
-    this.render();
-    return this;
-  }
-
   render(data = null, key = null) {
     if (data === null) {
       data = this._data;
@@ -298,6 +312,10 @@ export default class Table {
 
     if (isEqual(data, this._data)) {
       return;
+    }
+
+    if (this._scroller) {
+      this._scroller.resize();
     }
 
     this._data = data;
@@ -384,6 +402,34 @@ export default class Table {
     if (this._model) {
       this._model.setMaxListeners(this._model.getMaxListeners() - 1);
       this._model.removeListener('set', this._handleSet);
+    }
+  }
+
+  _bindEqualizer() {
+    if (this._equalizer) {
+      this._equalizer.root().on('resize.scola-table', () => {
+        this._equalize();
+      });
+    }
+  }
+
+  _unbindEqualizer() {
+    if (this._equalizer) {
+      this._equalizer.root().on('resize.scola-table', null);
+    }
+  }
+
+  _bindMaximizer() {
+    if (this._maximizer) {
+      this._maximizer.root().on('resize.scola-table', () => {
+        this._maximize();
+      });
+    }
+  }
+
+  _unbindMaximizer() {
+    if (this._maximizer) {
+      this._maximizer.root().on('resize.scola-table', null);
     }
   }
 
@@ -537,9 +583,9 @@ export default class Table {
 
     this._scrollerMedia = this._root
       .media(`not all and (min-width: ${width})`)
-      .call(() => this.resize())
+      .call(() => this.render())
       .media(`(min-width: ${width})`)
-      .call(() => this.resize())
+      .call(() => this.render())
       .start();
 
     return this;
@@ -640,10 +686,6 @@ export default class Table {
       setEvent.name !== 'count';
 
     if (cancel) {
-      if (setEvent.name === 'count') {
-        this._scroller.resize();
-      }
-
       return;
     }
 
@@ -652,13 +694,36 @@ export default class Table {
     }
 
     const total = this._model.get('total');
-    const count = this._model.get('count') -
-      (this._maximized === true ? 1 : 0);
+    let count = this._model.get('count');
+
+    if (this._maximizer) {
+      count -= 1;
+    } else {
+      const height = parseFloat(this._tableHead.style('height')) +
+        (count * this._rowHeight);
+
+      this._body.style('height', height + 'px');
+    }
 
     const max = Math.max(0, Math.ceil((total - count) / count));
-
     this._scroller.domain([0, max]);
-    this._scroller.resize();
+  }
+
+  _equalize() {
+    const height = parseFloat(this._equalizer.body().style('height')) -
+      parseFloat(this._tableHead.style('height')) -
+      parseFloat(this._table.style('padding-bottom'));
+
+    this._model.set('count', Math.floor(height / this._rowHeight));
+    this.render();
+  }
+
+  _maximize() {
+    const height = parseFloat(this._body.style('height')) -
+      parseFloat(this._tableHead.style('height'));
+
+    this._model.set('count', Math.ceil(height / this._rowHeight));
+    this.render();
   }
 
   _columns(datum) {
