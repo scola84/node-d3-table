@@ -311,7 +311,7 @@ export default class Table {
     }
 
     if (isEqual(data, this._data)) {
-      return;
+      return this;
     }
 
     if (this._scroller) {
@@ -358,6 +358,7 @@ export default class Table {
       });
 
     this._enter(enter.transition(), this);
+    return this;
   }
 
   _bindTable() {
