@@ -94,15 +94,15 @@ export default class Table {
   }
 
   destroy() {
-    this._unbindTable();
-    this._unbindModel();
-    this._unbindEqualizer();
-    this._unbindMaximizer();
-
     this._unbindInsetHover();
     this._unbindInsetSwipe();
     this._unbindHover();
     this._unbindSwipe();
+
+    this._unbindEqualizer();
+    this._unbindMaximizer();
+    this._unbindModel();
+    this._unbindTable();
 
     this._deleteInset();
     this._deleteHeader();
