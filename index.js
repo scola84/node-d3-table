@@ -1,7 +1,11 @@
 import Table from './src/table';
+import formatCell from './src/helper/format-cell';
 
-export { default as formatCell } from './src/helper/format-cell';
-
-export function table() {
+function table() {
   return new Table();
 }
+
+export {
+  formatCell,
+  table
+};
