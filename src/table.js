@@ -3,10 +3,13 @@
 import { event, select } from 'd3';
 import isEqual from 'lodash-es/isEqual';
 import { controlBar } from '@scola/d3-control';
+import { Observer } from '@scola/d3-model';
 import { scroller } from '@scola/d3-scroller';
 
-export default class Table {
+export default class Table extends Observer {
   constructor() {
+    super();
+
     this._enter = (s) => s;
     this._exit = (s) => s;
 
@@ -89,7 +92,6 @@ export default class Table {
     this._tableBody = this._table
       .append('tbody');
 
-    this._handleSet = (e) => this._set(e);
     this._bindTable();
   }
 
@@ -101,7 +103,6 @@ export default class Table {
 
     this._unbindEqualizer();
     this._unbindMaximizer();
-    this._unbindModel();
     this._unbindTable();
 
     this._deleteInset();
@@ -117,17 +118,6 @@ export default class Table {
 
   root() {
     return this._root;
-  }
-
-  model(value = null) {
-    if (value === null) {
-      return this._model;
-    }
-
-    this._model = value;
-    this._bindModel();
-
-    return this;
   }
 
   enter(value = null) {
@@ -409,20 +399,6 @@ export default class Table {
     if (this._gesture) {
       this._gesture.destroy();
       this._gesture = null;
-    }
-  }
-
-  _bindModel() {
-    if (this._model) {
-      this._model.setMaxListeners(this._model.getMaxListeners() + 1);
-      this._model.addListener('set', this._handleSet);
-    }
-  }
-
-  _unbindModel() {
-    if (this._model) {
-      this._model.setMaxListeners(this._model.getMaxListeners() - 1);
-      this._model.removeListener('set', this._handleSet);
     }
   }
 
@@ -781,7 +757,7 @@ export default class Table {
     }
 
     const max = Math.max(0, Math.ceil((total - count) / count));
-    this._scroller.domain([0, max]);
+    this._scroller.scale([0, max]);
   }
 
   _equalize() {
