@@ -222,6 +222,10 @@ export default class Table extends Observer {
     this._maximizer = element;
     this._bindMaximizer();
 
+    if (this._scroller) {
+      this._setFormat();
+    }
+
     this._root.styles({
       'height': '100%',
       'left': 0,
@@ -613,11 +617,20 @@ export default class Table extends Observer {
     return this;
   }
 
+  _setFormat() {
+    this._scroller.format((v) => v - 1);
+  }
+
   _insertScroller(width) {
     this._scroller = scroller()
+      .model(this._model)
       .vertical('1em')
       .line(false)
       .tabindex(0);
+
+    if (this._maximizer) {
+      this._setFormat();
+    }
 
     this._scroller.root().on('end.table', () => {
       this._hideScroller();
@@ -652,13 +665,13 @@ export default class Table extends Observer {
   }
 
   _hideScroller() {
-    const show = !this._scroller ||
+    const cancel = !this._scroller ||
       this._hover === false ||
       this._over === true ||
       this._swiped === true ||
       this._scroller.scrolling();
 
-    if (show) {
+    if (cancel) {
       return;
     }
 
@@ -672,10 +685,10 @@ export default class Table extends Observer {
   }
 
   _showScroller() {
-    const hide = !this._scroller ||
+    const cancel = this._model &&
       this._model.get('total') === 0;
 
-    if (hide) {
+    if (cancel) {
       return;
     }
 
@@ -684,7 +697,9 @@ export default class Table extends Observer {
       .transition()
       .style('opacity', 1);
 
-    this._scroller.resize();
+    if (this._scroller) {
+      this._scroller.resize();
+    }
   }
 
   _change(type) {
@@ -732,32 +747,17 @@ export default class Table extends Observer {
   }
 
   _set(setEvent) {
-    const cancel = setEvent.changed === false ||
-      setEvent.name !== 'total' &&
+    const cancel = this._maximizer ||
       setEvent.name !== 'count';
 
     if (cancel) {
       return;
     }
 
-    if (!this._model.has('total') || !this._model.has('count')) {
-      return;
-    }
+    const height = parseFloat(this._tableHead.style('height')) +
+      (setEvent.value * this._rowHeight);
 
-    const total = this._model.get('total');
-    let count = this._model.get('count');
-
-    if (this._maximizer) {
-      count -= 1;
-    } else {
-      const height = parseFloat(this._tableHead.style('height')) +
-        (count * this._rowHeight);
-
-      this._body.style('height', height + 'px');
-    }
-
-    const max = Math.max(0, Math.ceil((total - count) / count));
-    this._scroller.scale([0, max]);
+    this._body.style('height', height + 'px');
   }
 
   _equalize() {
