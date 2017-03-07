@@ -625,8 +625,7 @@ export default class Table extends Observer {
     this._scroller = scroller()
       .model(this._model)
       .vertical('1em')
-      .line(false)
-      .tabindex(0);
+      .line(false);
 
     if (this._maximizer) {
       this._setFormat();
@@ -685,8 +684,11 @@ export default class Table extends Observer {
   }
 
   _showScroller() {
-    const cancel = this._model &&
-      this._model.get('total') === 0;
+    const cancel = !this._model ||
+      this._model.get('total') === 0 ||
+      this._hover === true &&
+      this._over === false ||
+      this._swipe === false;
 
     if (cancel) {
       return;
@@ -747,6 +749,10 @@ export default class Table extends Observer {
   }
 
   _set(setEvent) {
+    if (setEvent.name === 'total') {
+      this._showScroller();
+    }
+
     const cancel = this._maximizer ||
       setEvent.name !== 'count';
 
