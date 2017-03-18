@@ -585,6 +585,17 @@ export default class Table extends Observer {
       })
       .text(text);
 
+    if (this._maximizer) {
+      this._message.styles({
+        'color': '#AAA',
+        'font-size': '2em'
+      });
+
+      this._table.styles({
+        'height': '100%'
+      });
+    }
+
     return this;
   }
 
@@ -600,6 +611,12 @@ export default class Table extends Observer {
         .remove();
 
       this._message = null;
+    }
+
+    if (this._maximizer) {
+      this._table.styles({
+        'height': null
+      });
     }
 
     return this;
