@@ -30,7 +30,9 @@ export default class Table extends Observer {
     this._maximizer = null;
     this._equalizer = null;
 
+    this._maxCount = 0;
     this._rowHeight = 48;
+
     this._inset = false;
     this._over = false;
     this._swiped = false;
@@ -135,6 +137,15 @@ export default class Table extends Observer {
     }
 
     this._exit = value;
+    return this;
+  }
+
+  count(value = null) {
+    if (value === null) {
+      return this._maxCount;
+    }
+
+    this._maxCount = value;
     return this;
   }
 
@@ -787,7 +798,10 @@ export default class Table extends Observer {
       parseFloat(this._tableHead.style('height')) -
       parseFloat(this._root.style('padding-bottom'));
 
-    this._model.set('count', Math.floor(height / this._rowHeight));
+    const count = Math.min(this._maxCount,
+      Math.floor(height / this._rowHeight));
+
+    this._model.set('count', count);
     this.render();
   }
 
@@ -795,7 +809,10 @@ export default class Table extends Observer {
     const height = parseFloat(this._body.style('height')) -
       parseFloat(this._tableHead.style('height'));
 
-    this._model.set('count', Math.ceil(height / this._rowHeight));
+    const count = Math.min(this._maxCount,
+      Math.ceil(height / this._rowHeight));
+
+    this._model.set('count', count);
     this.render();
   }
 
