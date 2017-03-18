@@ -798,8 +798,11 @@ export default class Table extends Observer {
       parseFloat(this._tableHead.style('height')) -
       parseFloat(this._root.style('padding-bottom'));
 
-    const count = Math.min(this._maxCount,
-      Math.floor(height / this._rowHeight));
+    let count = Math.floor(height / this._rowHeight);
+
+    if (this._maxCount) {
+      count = Math.min(this._maxCount, count);
+    }
 
     this._model.set('count', count);
     this.render();
@@ -809,8 +812,11 @@ export default class Table extends Observer {
     const height = parseFloat(this._body.style('height')) -
       parseFloat(this._tableHead.style('height'));
 
-    const count = Math.min(this._maxCount,
-      Math.ceil(height / this._rowHeight));
+    let count = Math.ceil(height / this._rowHeight);
+
+    if (this._maxCount) {
+      count = Math.min(this._maxCount, count);
+    }
 
     this._model.set('count', count);
     this.render();
