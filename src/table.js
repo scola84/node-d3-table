@@ -684,8 +684,11 @@ export default class Table extends Observer {
   }
 
   _showScroller() {
-    const cancel = !this._model ||
-      this._model.get('total') === 0 ||
+    const total = this._model.get('total') || 0;
+    const count = this._model.get('count') || 0;
+
+    const cancel =
+      total < count ||
       this._hover === true &&
       this._over === false ||
       this._swipe === false;
