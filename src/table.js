@@ -798,6 +798,10 @@ export default class Table extends Observer {
   }
 
   _set(setEvent) {
+    if (setEvent.name === 'total') {
+      this._showScroller();
+    }
+
     const cancel = this._maximizer ||
       setEvent.name !== 'count';
 
