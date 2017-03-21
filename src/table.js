@@ -363,7 +363,10 @@ export default class Table extends Observer {
       this._key = null;
     }
 
-    if (isEqual(data, this._data)) {
+    const cancel = data.length === 0 ||
+      isEqual(data, this._data);
+
+    if (cancel) {
       return this;
     }
 
