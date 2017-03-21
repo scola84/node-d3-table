@@ -37,7 +37,7 @@ export default class Table extends Observer {
     this._over = false;
     this._swiped = false;
 
-    this._data = null;
+    this._data = [];
     this._key = null;
 
     this._root = select('body')
@@ -120,6 +120,21 @@ export default class Table extends Observer {
 
   root() {
     return this._root;
+  }
+
+  data() {
+    return this._data;
+  }
+
+  index(check = () => {}) {
+    let result = null;
+
+    this._data.forEach((datum, index) => {
+      result = result === null && check(datum) === true ?
+        index : result;
+    });
+
+    return result;
   }
 
   enter(value = null) {
@@ -330,7 +345,7 @@ export default class Table extends Observer {
       return this._delayMessage(value, delay);
     }
 
-    this._data = null;
+    this._data = [];
 
     if (this._message) {
       return this._updateMessage(value);
@@ -344,7 +359,7 @@ export default class Table extends Observer {
       data = this._data;
       key = this._key;
 
-      this._data = null;
+      this._data = [];
       this._key = null;
     }
 
