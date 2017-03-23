@@ -730,8 +730,8 @@ export default class Table extends Observer {
   }
 
   _showScroller() {
-    const total = this._model.get('total') || 0;
-    const count = this._model.get('count') || 0;
+    const total = this._model.total() || 0;
+    const count = this._model.get(this._name) || 0;
 
     const cancel =
       total < count ||
@@ -798,12 +798,8 @@ export default class Table extends Observer {
   }
 
   _set(setEvent) {
-    if (setEvent.name === 'total') {
-      this._showScroller();
-    }
-
     const cancel = this._maximizer ||
-      setEvent.name !== 'count';
+      setEvent.name !== this._name;
 
     if (cancel) {
       return;
@@ -826,7 +822,11 @@ export default class Table extends Observer {
       count = Math.min(this._maxCount, count);
     }
 
-    this._model.set('count', count);
+    if (this._scroller) {
+      this._scroller.count(count);
+    }
+
+    this._model.set(this._name, count);
     this.render();
   }
 
@@ -840,7 +840,11 @@ export default class Table extends Observer {
       count = Math.min(this._maxCount, count);
     }
 
-    this._model.set('count', count);
+    if (this._scroller) {
+      this._scroller.count(count);
+    }
+
+    this._model.set(this._name, count);
     this.render();
   }
 
