@@ -94,6 +94,8 @@ export default class Table extends Observer {
     this._tableBody = this._table
       .append('tbody');
 
+    this._handleTotal = (v) => this._total(v);
+
     this._bindTable();
   }
 
@@ -415,6 +417,22 @@ export default class Table extends Observer {
 
     this._enter(enter.transition(), this);
     return this;
+  }
+
+  _bindModel() {
+    super._bindModel();
+
+    if (this._model) {
+      this._model.on('total', this._handleTotal);
+    }
+  }
+
+  _unbindModel() {
+    super._unbindModel();
+
+    if (this._model) {
+      this._model.removeListener('total', this._handleTotal);
+    }
   }
 
   _bindTable() {
@@ -809,6 +827,10 @@ export default class Table extends Observer {
       (setEvent.value * this._rowHeight);
 
     this._body.style('height', height + 'px');
+  }
+
+  _total(value) {
+    this._scroller.max(value);
   }
 
   _equalize() {
