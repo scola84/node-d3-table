@@ -124,19 +124,12 @@ export default class Table extends Observer {
     return this._root;
   }
 
-  data() {
-    return this._data;
+  body() {
+    return this._tableBody;
   }
 
-  index(check = () => {}) {
-    let result = null;
-
-    this._data.forEach((datum, index) => {
-      result = result === null && check(datum) === true ?
-        index : result;
-    });
-
-    return result;
+  data() {
+    return this._data;
   }
 
   enter(value = null) {
