@@ -30,7 +30,7 @@ export default class Table extends Observer {
     this._maximizer = null;
     this._equalizer = null;
 
-    this._maxCount = 0;
+    this._maxCount = null;
     this._rowHeight = 48;
 
     this._inset = false;
@@ -177,7 +177,7 @@ export default class Table extends Observer {
       return this._deleteInset();
     }
 
-    if (!this._rootMedia) {
+    if (this._rootMedia === null) {
       this._insertInset(width);
     }
 
@@ -189,7 +189,7 @@ export default class Table extends Observer {
       return this._deleteHeader();
     }
 
-    if (!this._header) {
+    if (this._header === null) {
       this._insertHeader();
     }
 
@@ -201,7 +201,7 @@ export default class Table extends Observer {
       return this._deleteFooter();
     }
 
-    if (!this._footer) {
+    if (this._footer === null) {
       this._insertFooter();
     }
 
@@ -217,7 +217,7 @@ export default class Table extends Observer {
       return this._deleteScroller();
     }
 
-    if (!this._scroller) {
+    if (this._scroller === null) {
       this._insertScroller(width);
     }
 
@@ -315,7 +315,7 @@ export default class Table extends Observer {
         'vertical-align': 'center'
       });
 
-    if (modifier) {
+    if (typeof modifier === 'function') {
       this._headerModifier = modifier;
     }
 
@@ -358,10 +358,11 @@ export default class Table extends Observer {
       this._key = null;
     }
 
-    const cancel = data.length === 0 ||
-      isEqual(data, this._data);
+    const cancel =
+      data.length === 0 ||
+      isEqual(data, this._data) === true;
 
-    if (cancel) {
+    if (cancel === true) {
       return this;
     }
 
@@ -721,13 +722,14 @@ export default class Table extends Observer {
   }
 
   _hideScroller() {
-    const cancel = !this._scroller ||
+    const cancel =
+      this._scroller === null ||
       this._hover === false ||
       this._over === true ||
       this._swiped === true ||
-      this._scroller.scrolling();
+      this._scroller.scrolling() === true;
 
-    if (cancel) {
+    if (cancel === true) {
       return;
     }
 
@@ -750,7 +752,7 @@ export default class Table extends Observer {
       this._over === false ||
       this._swipe === false;
 
-    if (cancel) {
+    if (cancel === true) {
       return;
     }
 
@@ -794,7 +796,7 @@ export default class Table extends Observer {
   }
 
   _swipe(swipeEvent) {
-    if (!this._scroller) {
+    if (this._scroller === null) {
       return;
     }
 
@@ -809,10 +811,11 @@ export default class Table extends Observer {
   }
 
   _set(setEvent) {
-    const cancel = this._maximizer ||
+    const cancel =
+      this._maximizer !== null ||
       setEvent.name !== this._name;
 
-    if (cancel) {
+    if (cancel === true) {
       return;
     }
 
@@ -823,7 +826,9 @@ export default class Table extends Observer {
   }
 
   _total(value) {
-    this._scroller.max(value);
+    if (this._scroller) {
+      this._scroller.max(value);
+    }
   }
 
   _equalize() {
@@ -833,7 +838,7 @@ export default class Table extends Observer {
 
     let count = Math.floor(height / this._rowHeight);
 
-    if (this._maxCount) {
+    if (Number.isInteger(this._maxCount) === true) {
       count = Math.min(this._maxCount, count);
     }
 
@@ -851,7 +856,7 @@ export default class Table extends Observer {
 
     let count = Math.ceil(height / this._rowHeight);
 
-    if (this._maxCount) {
+    if (Number.isInteger(this._maxCount) === true) {
       count = Math.min(this._maxCount, count);
     }
 
