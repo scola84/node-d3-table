@@ -45,7 +45,7 @@ export default class Table extends Observer {
       .remove()
       .classed('scola table', true)
       .styles({
-        'padding-bottom': '3em'
+        'margin-bottom': '2em'
       });
 
     this._body = this._root
@@ -530,8 +530,8 @@ export default class Table extends Observer {
       .media(`(min-width: ${width})`)
       .call(() => { this._inset = true; })
       .styles({
-        'padding-left': '1em',
-        'padding-right': '1em'
+        'margin-left': '1em',
+        'margin-right': '1em'
       })
       .start();
 
@@ -832,9 +832,10 @@ export default class Table extends Observer {
   }
 
   _equalize() {
-    const height = parseFloat(this._equalizer.body().style('height')) -
+    const height =
+      parseFloat(this._equalizer.body().style('height')) -
       parseFloat(this._tableHead.style('height')) -
-      parseFloat(this._root.style('padding-bottom'));
+      parseFloat(this._root.style('margin-bottom'));
 
     let count = Math.floor(height / this._rowHeight);
 
@@ -851,7 +852,8 @@ export default class Table extends Observer {
   }
 
   _maximize() {
-    const height = parseFloat(this._body.style('height')) -
+    const height =
+      parseFloat(this._body.style('height')) -
       parseFloat(this._tableHead.style('height'));
 
     let count = Math.ceil(height / this._rowHeight);
