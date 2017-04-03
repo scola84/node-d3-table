@@ -349,19 +349,15 @@ export default class Table extends Observer {
     return this._insertMessage(value);
   }
 
-  render(data = null, keys = null) {
-    if (data === null) {
-      data = this._data;
-      keys = this._keys;
-    } else {
-      if (isEqual(data, this._data) === true) {
-        return this;
-      }
+  render(data, keys) {
+    this._data = data;
+    this._keys = keys;
 
-      this._data = data;
-      this._keys = keys;
-    }
+    this._render();
+    return this;
+  }
 
+  _render() {
     if (this._scroller) {
       this._scroller.resize();
     }
@@ -761,7 +757,7 @@ export default class Table extends Observer {
 
   _change(type) {
     this._root.dispatch(type);
-    this.render();
+    this._render();
   }
 
   _mouseenter() {
@@ -841,7 +837,7 @@ export default class Table extends Observer {
     }
 
     this._model.set(this._name, count);
-    this.render();
+    this._render();
   }
 
   _maximize() {
@@ -860,7 +856,7 @@ export default class Table extends Observer {
     }
 
     this._model.set(this._name, count);
-    this.render();
+    this._render();
   }
 
   _columns(datum) {
