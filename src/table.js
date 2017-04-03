@@ -349,29 +349,22 @@ export default class Table extends Observer {
     return this._insertMessage(value);
   }
 
-  render(data = null, key = null) {
+  render(data = null, keys = null) {
     if (data === null) {
       data = this._data;
-      key = this._key;
+      keys = this._keys;
+    } else {
+      if (isEqual(data, this._data) === true) {
+        return this;
+      }
 
-      this._data = [];
-      this._key = null;
-    }
-
-    const cancel =
-      data.length === 0 ||
-      isEqual(data, this._data) === true;
-
-    if (cancel === true) {
-      return this;
+      this._data = data;
+      this._keys = keys;
     }
 
     if (this._scroller) {
       this._scroller.resize();
     }
-
-    this._data = data;
-    this._key = key;
 
     if (this._headerCells) {
       this._headerModifier(this._headerCells
@@ -380,7 +373,7 @@ export default class Table extends Observer {
 
     const row = this._tableBody
       .selectAll('tr')
-      .data(this._data, this._key);
+      .data(this._data);
 
     const cell = row.selectAll('td')
       .data((d) => this._columns(d));
@@ -530,8 +523,8 @@ export default class Table extends Observer {
       .media(`(min-width: ${width})`)
       .call(() => { this._inset = true; })
       .styles({
-        'margin-left': '1em',
-        'margin-right': '1em'
+        'padding-left': '1em',
+        'padding-right': '1em'
       })
       .start();
 
