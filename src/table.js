@@ -1,7 +1,6 @@
 /* eslint prefer-reflect: "off" */
 
 import { event, select } from 'd3';
-import isEqual from 'lodash-es/isEqual';
 import { controlBar } from '@scola/d3-control';
 import { Observer } from '@scola/d3-model';
 import { scroller } from '@scola/d3-scroller';
@@ -126,10 +125,6 @@ export default class Table extends Observer {
 
   body() {
     return this._tableBody;
-  }
-
-  data() {
-    return this._data;
   }
 
   enter(value = null) {
@@ -325,19 +320,13 @@ export default class Table extends Observer {
     return this;
   }
 
-  message(value = null, delay = null) {
+  message(value = null) {
     if (value === null) {
       return this._message;
     }
 
-    clearTimeout(this._timeout);
-
     if (value === false) {
       return this._deleteMessage();
-    }
-
-    if (delay !== null) {
-      return this._delayMessage(value, delay);
     }
 
     this._data = [];
@@ -648,18 +637,6 @@ export default class Table extends Observer {
         'height': null
       });
     }
-
-    return this;
-  }
-
-  _delayMessage(text, delay) {
-    delay = delay === true ? 250 : delay;
-
-    clearTimeout(this._timeout);
-
-    this._timeout = setTimeout(() => {
-      this.message(text);
-    }, delay);
 
     return this;
   }
