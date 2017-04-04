@@ -37,7 +37,6 @@ export default class Table extends Observer {
     this._swiped = false;
 
     this._data = [];
-    this._key = null;
 
     this._root = select('body')
       .append('div')
@@ -125,6 +124,10 @@ export default class Table extends Observer {
 
   body() {
     return this._tableBody;
+  }
+
+  data() {
+    return this._data;
   }
 
   enter(value = null) {
@@ -338,11 +341,10 @@ export default class Table extends Observer {
     return this._insertMessage(value);
   }
 
-  render(data, keys) {
+  render(data) {
     this._data = data;
-    this._keys = keys;
-
     this._render();
+
     return this;
   }
 
