@@ -89,11 +89,7 @@ export default class Table extends Observer {
     this._headerRow = this._tableHead
       .append('tr');
 
-    this._tableBody = this._table
-      .append('tbody');
-
     this._handleTotal = (v) => this._total(v);
-
     this._bindTable();
   }
 
@@ -122,12 +118,12 @@ export default class Table extends Observer {
     return this._root;
   }
 
-  body() {
-    return this._tableBody;
-  }
-
   data() {
     return this._data;
+  }
+
+  keys() {
+    return this._keys;
   }
 
   enter(value = null) {
@@ -341,10 +337,11 @@ export default class Table extends Observer {
     return this._insertMessage(value);
   }
 
-  render(data) {
+  render(data, keys = null) {
     this._data = data;
-    this._render();
+    this._keys = keys;
 
+    this._render();
     return this;
   }
 
@@ -358,12 +355,31 @@ export default class Table extends Observer {
         .transition(), this);
     }
 
-    const row = this._tableBody
+    const data = this._keys === null ? [this._data] : this._data;
+
+    let body = this._table
+      .selectAll('tbody:not(.message)')
+      .data(data);
+
+    body
+      .exit()
+      .remove();
+
+    body = body
+      .enter()
+      .append('tbody')
+      .merge(body);
+
+    const row = body
       .selectAll('tr')
-      .data(this._data);
+      .data((datum) => {
+        return Object.values(datum);
+      });
 
     const cell = row.selectAll('td')
-      .data((d) => this._columns(d));
+      .data((datum) => {
+        return this._columns(datum);
+      });
 
     const exit = this._exit(row
       .exit()
@@ -376,7 +392,9 @@ export default class Table extends Observer {
       .append('tr')
       .merge(row)
       .selectAll('td')
-      .data((d) => this._columns(d))
+      .data((datum) => {
+        return this._columns(datum);
+      })
       .enter()
       .append('td')
       .merge(cell)
@@ -590,13 +608,14 @@ export default class Table extends Observer {
   }
 
   _insertMessage(text) {
-    this._tableBody
-      .selectAll('tr')
+    this._table
+      .selectAll('tbody.message')
       .remove();
 
-    this._message = this._tableBody
-      .append('tr')
+    this._message = this._table
+      .append('tbody')
       .classed('scola message', true)
+      .append('tr')
       .append('td')
       .attr('colspan', this._headerNames.length)
       .styles({
@@ -627,8 +646,8 @@ export default class Table extends Observer {
 
   _deleteMessage() {
     if (this._message) {
-      this._tableBody
-        .selectAll('tr')
+      this._table
+        .selectAll('tbody.message')
         .remove();
 
       this._message = null;
