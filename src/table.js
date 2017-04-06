@@ -59,7 +59,13 @@ export default class Table extends Observer {
         'position': 'relative'
       });
 
-    this._container = this._body
+    this._tableWrapper = this._body
+      .append('div')
+      .styles({
+        'position': 'relative'
+      });
+
+    this._scrollerWrapper = this._tableWrapper
       .append('div')
       .classed('scola scroller', true)
       .styles({
@@ -75,7 +81,7 @@ export default class Table extends Observer {
         'width': '1.5em'
       });
 
-    this._table = this._body
+    this._table = this._tableWrapper
       .append('table')
       .styles({
         'border-collapse': 'collapse',
@@ -355,7 +361,11 @@ export default class Table extends Observer {
         .transition(), this);
     }
 
-    const data = this._keys === null ? [this._data] : this._data;
+    let data = this._data;
+
+    if (this._keys === null && this._data.length > 0) {
+      data = [data];
+    }
 
     let body = this._table
       .selectAll('tbody:not(.message)')
@@ -474,13 +484,13 @@ export default class Table extends Observer {
   }
 
   _bindHover() {
-    this._body.on('mouseenter', () => this._mouseenter());
-    this._body.on('mouseleave', () => this._mouseleave());
+    this._tableWrapper.on('mouseenter', () => this._mouseenter());
+    this._tableWrapper.on('mouseleave', () => this._mouseleave());
   }
 
   _unbindHover() {
-    this._body.on('mouseenter', null);
-    this._body.on('mouseleave', null);
+    this._tableWrapper.on('mouseenter', null);
+    this._tableWrapper.on('mouseleave', null);
   }
 
   _bindInsetHover() {
@@ -569,7 +579,7 @@ export default class Table extends Observer {
       });
 
     this._body.node().insertBefore(this._header.root().node(),
-      this._table.node());
+      this._tableWrapper.node());
 
     return this;
   }
@@ -680,7 +690,7 @@ export default class Table extends Observer {
       this._hideScroller();
     });
 
-    this._container
+    this._scrollerWrapper
       .append(() => this._scroller.root().node());
 
     this._scrollerMedia = this._root
@@ -720,11 +730,11 @@ export default class Table extends Observer {
       return;
     }
 
-    this._container
+    this._scrollerWrapper
       .transition()
       .style('opacity', 0)
       .on('end', () => {
-        this._container
+        this._scrollerWrapper
           .style('display', 'none');
       });
   }
@@ -743,7 +753,7 @@ export default class Table extends Observer {
       return;
     }
 
-    this._container
+    this._scrollerWrapper
       .style('display', 'flex')
       .transition()
       .style('opacity', 1);
@@ -797,21 +807,6 @@ export default class Table extends Observer {
     }
   }
 
-  _set(setEvent) {
-    const cancel =
-      this._maximizer !== null ||
-      setEvent.name !== this._name;
-
-    if (cancel === true) {
-      return;
-    }
-
-    const height = parseFloat(this._tableHead.style('height')) +
-      (setEvent.value * this._rowHeight);
-
-    this._body.style('height', height + 'px');
-  }
-
   _total(value) {
     if (this._scroller) {
       this._scroller.max(value);
@@ -819,10 +814,18 @@ export default class Table extends Observer {
   }
 
   _equalize() {
-    const height =
+    let height =
       parseFloat(this._equalizer.body().style('height')) -
       parseFloat(this._tableHead.style('height')) -
       parseFloat(this._root.style('margin-bottom'));
+
+    if (this._header) {
+      height -= parseFloat(this._header.root().style('height'));
+    }
+
+    if (this._footer) {
+      height -= parseFloat(this._footer.root().style('height'));
+    }
 
     let count = Math.floor(height / this._rowHeight);
 
