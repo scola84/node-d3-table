@@ -62,6 +62,7 @@ export default class Table extends Observer {
     this._tableWrapper = this._body
       .append('div')
       .styles({
+        'flex': 1,
         'position': 'relative'
       });
 
@@ -100,6 +101,8 @@ export default class Table extends Observer {
   }
 
   destroy() {
+    super.destroy();
+
     this._unbindInsetHover();
     this._unbindInsetSwipe();
     this._unbindHover();
@@ -805,6 +808,30 @@ export default class Table extends Observer {
     } else if (swipeEvent.type === 'swipedown') {
       this._scroller.down();
     }
+  }
+
+  _set(setEvent) {
+    const cancel =
+      this._maximizer !== null ||
+      setEvent.name !== this._name;
+
+    if (cancel === true) {
+      return;
+    }
+
+    let height =
+      parseFloat(this._tableHead.style('height')) +
+      (setEvent.value * this._rowHeight);
+
+    if (this._header) {
+      height += parseFloat(this._header.root().style('height'));
+    }
+
+    if (this._footer) {
+      height += parseFloat(this._footer.root().style('height'));
+    }
+
+    this._body.style('height', height + 'px');
   }
 
   _total(value) {
