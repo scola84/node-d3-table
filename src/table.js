@@ -51,9 +51,8 @@ export default class Table extends Observer {
       .classed('scola body', true)
       .styles({
         'background': '#FFF',
-        'border-color': '#CCC',
-        'border-style': 'solid',
-        'border-width': '1px 0',
+        'border-bottom': '1px solid #CCC',
+        'border-top': '1px solid #CCC',
         'display': 'flex',
         'flex-direction': 'column',
         'position': 'relative'
@@ -549,8 +548,9 @@ export default class Table extends Observer {
     this._bodyMedia = this._body
       .media(`(min-width: ${width})`)
       .styles({
+        'border-bottom': 'none',
         'border-radius': '0.5em',
-        'border-style': 'none',
+        'border-top': 'none',
         'overflow': 'hidden'
       })
       .start();
