@@ -65,6 +65,15 @@ export default class Table extends Observer {
         'position': 'relative'
       });
 
+    this._table = this._tableWrapper
+      .append('table')
+      .styles({
+        'border-collapse': 'collapse',
+        'position': 'absolute',
+        'table-layout': 'fixed',
+        'width': '100%'
+      });
+
     this._scrollerWrapper = this._tableWrapper
       .append('div')
       .classed('scola scroller', true)
@@ -79,14 +88,6 @@ export default class Table extends Observer {
         'right': 0,
         'top': 0,
         'width': '1.5em'
-      });
-
-    this._table = this._tableWrapper
-      .append('table')
-      .styles({
-        'border-collapse': 'collapse',
-        'table-layout': 'fixed',
-        'width': '100%'
       });
 
     this._tableHead = this._table
