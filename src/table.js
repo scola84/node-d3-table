@@ -61,6 +61,7 @@ export default class Table extends Observer {
     this._tableWrapper = this._body
       .append('div')
       .styles({
+        'background': '#FFF',
         'flex': 1,
         'position': 'relative'
       });
@@ -69,7 +70,6 @@ export default class Table extends Observer {
       .append('table')
       .styles({
         'border-collapse': 'collapse',
-        'position': 'absolute',
         'table-layout': 'fixed',
         'width': '100%'
       });
