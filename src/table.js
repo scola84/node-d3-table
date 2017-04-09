@@ -623,7 +623,7 @@ export default class Table extends Observer {
 
   _insertMessage(text) {
     this._table
-      .selectAll('tbody.message')
+      .selectAll('tbody')
       .remove();
 
     this._message = this._table
