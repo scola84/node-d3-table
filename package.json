@@ -9,7 +9,7 @@
   "jsnext:main": "./index.js",
   "dependencies": {
     "@scola/d3-control": "^1.0.0",
-    "@scola/d3-model": "^3.0.0",
+    "@scola/d3-model": "^3.1.0",
     "@scola/d3-scroller": "^2.0.0",
     "d3": "^4.8.0"
   }
