@@ -62,7 +62,7 @@ export default class Table extends Observer {
       .append('div')
       .styles({
         'background': '#FFF',
-        'flex': 1,
+        'flex': 'auto',
         'position': 'relative'
       });
 
