@@ -821,15 +821,15 @@ export default class Table extends Observer {
     }
 
     let height =
-      parseFloat(this._tableHead.style('height')) +
+      this._tableHead.height() +
       (setEvent.value * this._rowHeight);
 
     if (this._header) {
-      height += parseFloat(this._header.root().style('height'));
+      height += this._header.root().height();
     }
 
     if (this._footer) {
-      height += parseFloat(this._footer.root().style('height'));
+      height += this._footer.root().height();
     }
 
     this._body.style('height', height + 'px');
@@ -843,16 +843,16 @@ export default class Table extends Observer {
 
   _equalize() {
     let height =
-      parseFloat(this._equalizer.body().style('height')) -
-      parseFloat(this._tableHead.style('height')) -
+      this._equalizer.body().height() -
+      this._tableHead.height() -
       parseFloat(this._root.style('margin-bottom'));
 
     if (this._header) {
-      height -= parseFloat(this._header.root().style('height'));
+      height -= parseFloat(this._header.root().height());
     }
 
     if (this._footer) {
-      height -= parseFloat(this._footer.root().style('height'));
+      height -= parseFloat(this._footer.root().height());
     }
 
     let count = Math.floor(height / this._rowHeight);
@@ -871,8 +871,8 @@ export default class Table extends Observer {
 
   _maximize() {
     const height =
-      parseFloat(this._body.style('height')) -
-      parseFloat(this._tableHead.style('height'));
+      this._body.height() -
+      this._tableHead.height();
 
     let count = Math.ceil(height / this._rowHeight);
 
