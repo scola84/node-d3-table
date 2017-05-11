@@ -848,11 +848,11 @@ export default class Table extends Observer {
       parseFloat(this._root.style('margin-bottom'));
 
     if (this._header) {
-      height -= parseFloat(this._header.root().height());
+      height -= this._header.root().height(true);
     }
 
     if (this._footer) {
-      height -= parseFloat(this._footer.root().height());
+      height -= this._footer.root().height(true);
     }
 
     let count = Math.floor(height / this._rowHeight);
