@@ -645,6 +645,10 @@ export default class Table extends Observer {
         'font-size': '2em'
       });
 
+      this._tableWrapper.styles({
+        'height': '100%'
+      });
+
       this._table.styles({
         'height': '100%'
       });
