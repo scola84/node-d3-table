@@ -118,6 +118,10 @@ export default class Table extends Observer {
     this._deleteScroller();
     this._deleteMessage();
 
+    this._enter = null;
+    this._exit = null;
+    this._headerModifier = null;
+
     this._root.dispatch('destroy');
     this._root.remove();
     this._root = null;
