@@ -11,6 +11,7 @@ export default class Table extends Observer {
 
     this._enter = (s) => s;
     this._exit = (s) => s;
+    this._click = () => {};
 
     this._headerNames = [];
     this._headerModifier = (s) => s;
@@ -35,6 +36,9 @@ export default class Table extends Observer {
     this._inset = false;
     this._over = false;
     this._swiped = false;
+
+    this._item = null;
+    this._items = new Map();
 
     this._data = [];
 
@@ -139,6 +143,15 @@ export default class Table extends Observer {
     return this._keys;
   }
 
+  click(value = null) {
+    if (value === null) {
+      return this._click;
+    }
+
+    this._click = value;
+    return this;
+  }
+
   enter(value = null) {
     if (value === null) {
       return this._enter;
@@ -187,6 +200,22 @@ export default class Table extends Observer {
     if (this._rootMedia === null) {
       this._insertInset(width);
     }
+
+    return this;
+  }
+
+  item(value = null) {
+    if (value === null) {
+      return this._item;
+    }
+
+    this._item = value;
+
+    this._root
+      .classed('item', true);
+
+    this._enter = (s) => this._enterItem(s);
+    this._exit = (s) => this._exitItem(s);
 
     return this;
   }
@@ -445,6 +474,10 @@ export default class Table extends Observer {
   }
 
   _bindTable() {
+    this._table.on('click.scola-table', () => {
+      this._click(event);
+    });
+
     this._gesture = this._table
       .gesture()
       .on('panstart', (e) => e.stopPropagation())
@@ -456,6 +489,8 @@ export default class Table extends Observer {
   }
 
   _unbindTable() {
+    this._table.on('click.scola-table', null);
+
     if (this._gesture) {
       this._gesture.destroy();
       this._gesture = null;
@@ -686,6 +721,38 @@ export default class Table extends Observer {
 
   _setFormat() {
     this._scroller.format((v) => v - 1);
+  }
+
+  _enterItem(selection) {
+    const data = selection
+      .selection()
+      .data();
+
+    selection
+      .selection()
+      .styles({
+        'border': 0,
+        'padding': 0
+      })
+      .append((datum, index, nodes) => {
+        let item = this._items.get(nodes[index]);
+        item = this._item(item, datum);
+
+        item.first(data.indexOf(datum) === 0);
+        this._items.set(nodes[index], item);
+
+        return item.root().node();
+      });
+
+    return selection;
+  }
+
+  _exitItem(selection) {
+    selection
+      .selection()
+      .style('opacity', 0);
+
+    return selection;
   }
 
   _insertScroller(width) {
