@@ -734,12 +734,21 @@ export default class Table extends Observer {
         'border': 0,
         'padding': 0
       })
+      .on('click.scola-table', (datum, index, nodes) => {
+        this._table.selectAll('tr').classed('selected', false);
+        select(nodes[index].parentNode).classed('selected', true);
+      })
       .append((datum, index, nodes) => {
         let item = this._items.get(nodes[index]);
         item = this._item(item, datum);
 
         item.first(data.indexOf(datum) === 0);
         this._items.set(nodes[index], item);
+
+        if (item.selected() === true) {
+          select(nodes[index].parentNode)
+            .classed('selected', true);
+        }
 
         return item.root().node();
       });
@@ -750,6 +759,7 @@ export default class Table extends Observer {
   _exitItem(selection) {
     selection
       .selection()
+      .on('click.scola-table', null)
       .style('opacity', 0);
 
     return selection;
