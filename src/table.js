@@ -34,7 +34,11 @@ export default class Table extends Observer {
     this._rowHeight = 48;
 
     this._inset = false;
+
+    this._hover = false;
     this._over = false;
+
+    this._swiper = false;
     this._swiped = false;
 
     this._item = null;
@@ -67,6 +71,7 @@ export default class Table extends Observer {
       .styles({
         'background': '#FFF',
         'flex': '1 1 0%',
+        'overflow': 'hidden',
         'position': 'relative'
       });
 
@@ -87,11 +92,11 @@ export default class Table extends Observer {
         'height': '100%',
         'justify-content': 'center',
         'opacity': 0,
-        'padding': '0.25em 0',
+        'padding': '0.125em 0',
         'position': 'absolute',
-        'right': 0,
+        'right': '-1px',
         'top': 0,
-        'width': '1.5em'
+        'width': '1em'
       });
 
     this._tableHead = this._table
@@ -319,8 +324,10 @@ export default class Table extends Observer {
 
   swipe(action = true) {
     if (action === true) {
+      this._swiper = action;
       this._bindSwipe();
     } else if (action === false) {
+      this._swiper = action;
       this._unbindSwipe();
     } else if (action === 'change') {
       this._bindInsetSwipe();
@@ -768,7 +775,8 @@ export default class Table extends Observer {
   _insertScroller(width) {
     this._scroller = scroller()
       .model(this._model)
-      .vertical('1em')
+      .vertical('0.75em')
+      .grow(true)
       .line(false);
 
     if (this._maximizer) {
@@ -836,7 +844,8 @@ export default class Table extends Observer {
       total < count ||
       this._hover === true &&
       this._over === false ||
-      this._swipe === false;
+      this._swiper === true &&
+      this._swiped === false;
 
     if (cancel === true) {
       return;
