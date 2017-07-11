@@ -291,6 +291,7 @@ export default class Table extends Observer {
     this._root.styles({
       'height': '100%',
       'left': 0,
+      'margin': 0,
       'padding': 0,
       'position': 'absolute',
       'top': 0,
@@ -302,6 +303,12 @@ export default class Table extends Observer {
       'height': '100%',
       'overflow': 'hidden'
     });
+
+    this._maximizer
+      .body()
+      .styles({
+        'padding': 0
+      });
 
     return this;
   }
