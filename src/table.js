@@ -488,14 +488,14 @@ export default class Table extends Observer {
   }
 
   _bindTable() {
-    this._table.on('click.scola-table', () => {
-      this._click(event);
-    });
-
-    this._table.on('wheel.scola-table', () => {
+    this._root.on('wheel.scola-table', () => {
       if (this._scroller) {
         this._scroller.wheel(event);
       }
+    });
+
+    this._table.on('click.scola-table', () => {
+      this._click(event);
     });
 
     this._gesture = this._table
@@ -509,8 +509,8 @@ export default class Table extends Observer {
   }
 
   _unbindTable() {
+    this._root.on('wheel.scola-table', null);
     this._table.on('click.scola-table', null);
-    this._table.on('wheel.scola-table', null);
 
     if (this._gesture) {
       this._gesture.destroy();
