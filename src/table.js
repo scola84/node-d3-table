@@ -766,10 +766,8 @@ export default class Table extends Observer {
         item.first(data.indexOf(datum) === 0);
         this._items.set(nodes[index], item);
 
-        if (item.selected() === true) {
-          select(nodes[index].parentNode)
-            .classed('selected', true);
-        }
+        select(nodes[index].parentNode)
+          .classed('selected', item.selected());
 
         return item.root().node();
       });
