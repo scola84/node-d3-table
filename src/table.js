@@ -68,6 +68,7 @@ export default class Table extends Observer {
 
     this._tableWrapper = this._body
       .append('div')
+      .classed('scola table-wrapper', true)
       .styles({
         'background': '#FFF',
         'flex': '1 1 0%',
@@ -94,7 +95,7 @@ export default class Table extends Observer {
         'opacity': 0,
         'padding': '0.125em 0',
         'position': 'absolute',
-        'right': '-1px',
+        'right': 0,
         'top': 0,
         'width': '1em'
       });
@@ -399,6 +400,18 @@ export default class Table extends Observer {
 
     this._render();
     return this;
+  }
+
+  name(value) {
+    const result = super.name(value);
+    this._showScroller();
+    return result;
+  }
+
+  value(value) {
+    const result = super.value(value);
+    this._showScroller();
+    return result;
   }
 
   _render() {
@@ -849,6 +862,10 @@ export default class Table extends Observer {
   }
 
   _showScroller() {
+    if (this._model === null) {
+      return;
+    }
+
     const total = this._model.total() || 0;
     const count = this._model.get(this._name) || 0;
 
