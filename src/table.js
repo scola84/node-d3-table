@@ -488,6 +488,7 @@ export default class Table extends Observer {
     super._bindModel();
 
     if (this._model) {
+      this._model.setMaxListeners(this._model.getMaxListeners() + 1);
       this._model.on('total', this._handleTotal);
     }
   }
@@ -496,6 +497,7 @@ export default class Table extends Observer {
     super._unbindModel();
 
     if (this._model) {
+      this._model.setMaxListeners(this._model.getMaxListeners() - 1);
       this._model.removeListener('total', this._handleTotal);
     }
   }
