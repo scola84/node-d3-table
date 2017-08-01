@@ -41,6 +41,7 @@ export default class Table extends Observer {
     this._swiper = false;
     this._swiped = false;
 
+    this._prepare = null;
     this._item = null;
     this._items = new Map();
 
@@ -207,6 +208,15 @@ export default class Table extends Observer {
       this._insertInset(width);
     }
 
+    return this;
+  }
+
+  prepare(value = null) {
+    if (value === null) {
+      return this._prepare;
+    }
+
+    this._prepare = value;
     return this;
   }
 
@@ -395,6 +405,10 @@ export default class Table extends Observer {
   }
 
   render(data, keys = null) {
+    if (this._prepare) {
+      this._prepare(data, keys, this);
+    }
+
     this._data = data;
     this._keys = keys;
 
